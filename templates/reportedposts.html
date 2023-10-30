@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Moderator</title>
+        <link href="../static/output.css" rel="stylesheet" />
+    </head>
+    <body class="bg-gray-100">
+        <h1 class="text-3xl font-bold text-center pt-8">Reported Posts!</h1>
+        <p class="text-2xl text-center p-6">Moderate reported posts:</p>
+        {{range .Posts}}
+        <div class="post">
+          <div class="flex flex-col p-6 bg-gray-200 mb-4 rounded" style="max-width: 800px; margin: 1rem auto;">
+            <!-- <h2>{{.ID}}</h2> -->
+            <div class="bg-gray-300">
+              <p class="m-5">{{.Content}}</p>
+              
+              <p class="my-5 mx-5">
+                Post by: <span class="font-bold">{{.Username}}.</span>
+                 <span class =""> {{.PostedAgo}}.</span>
+              </p>
+    
+              <div class="flex">
+                <button
+                  class="likeButton mr-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-2 rounded m-3"
+                  data-post-id="{{.ID}}"
+                  data-user-id="{{.Username}}"
+                >
+                  👍 Like <span id="likeCount{{.ID}}">{{.Likes}}</span>
+                </button>
+                <button
+                  class="dislikeButton mr-2 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-2 rounded m-3"
+                  data-post-id="{{.ID}}"
+                  data-user-id="{{.Username}}"
+                >
+                  👎 Dislike <span id="dislikeCount{{.ID}}">{{.Dislikes}}</span>
+                </button>
+                
+              </div>
+            </div>
+            <div id="comments{{.ID}}" class="comments" style="display: none;">
+                <p class="">Comment section 💬</p>
+    
+            </div>
+            <form action="/addcomment" method="post">
+              <div class="flex justify-between">
+                  <input type="hidden" name="id" value="{{.ID}}" />
+                  <input
+                      type="submit"
+                      value="Comment"
+                      class="submit-button bg-gray-300 hover:bg-gray-400 text-black p-2 mt-4 rounded"
+                  />
+                </form>
+                  {{if eq $.Role "moderator"}}
+                  <form action = "/delete" method = "post">
+                      <button type="submit" class="submit-button ml-auto bg-red-700 hover:bg-red-800 border rounded p-2 mt-4 " name = "delete" value ={{.ID}} >Delete this post!</button>
+                    </form>
+                  {{end}}
+              </div>
+        </div>
+        {{else}}
+        <p class = "flex  justify-center font-extrabold text-2xl pt-4" >No posts to show.</p>
+        {{end}}
+        <div class=" bottom-4 left-0 right-0 text-center pb-4">
+            <button class="bg-blue-300 hover:bg-blue-400 border rounded m-8 p-2 transition duration-500" onclick="window.location.href='http://localhost:8080/homepage.html'">
+                Return to Homepage
+            </button>
+          </div>
+    </body>
+</html>
