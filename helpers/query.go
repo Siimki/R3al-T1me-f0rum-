@@ -105,6 +105,7 @@ func InitalizeDb(username string, password string, email string, role string, ap
 	}
 
 	if err := InsertUser(db, username, password, email, role, apply); err != nil {
+		//fmt.Println("000", email, "000", password, username)
 		return fmt.Errorf("failed to insert user: %w", err)
 	}
 

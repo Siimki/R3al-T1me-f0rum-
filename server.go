@@ -7,17 +7,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	
-
 	"net/http"
 	"strconv"
 	"text/template"
 	"time"
-
 	"forum/helpers"
-
 	_ "github.com/mattn/go-sqlite3"
-
 
 )
 
@@ -70,6 +65,8 @@ func main() {
 
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 	http.Handle("/dist/", http.StripPrefix("/dist/", http.FileServer(http.Dir("dist"))))
+	http.Handle("/forumpages/", http.StripPrefix("/forumpages/", http.FileServer(http.Dir("forumpages"))))
+
 
 	http.HandleFunc("/callback", func(w http.ResponseWriter, r *http.Request) { handleCallback(w, r, db)})
 	http.HandleFunc("/callbackgithub", func(w http.ResponseWriter, r *http.Request) { HandleCallbackGithub(w, r, db)})
@@ -89,7 +86,7 @@ func main() {
 	http.HandleFunc("/addcomment", addComment)
 	http.HandleFunc("/register", registerHandler)
 	http.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) { loginHandler(w, r, db) })
-	http.HandleFunc("/homepage.html", func(w http.ResponseWriter, r *http.Request) { homePageHandler(w, r, db) })
+	http.HandleFunc("/homepage", func(w http.ResponseWriter, r *http.Request) { homePageHandler(w, r, db) })
 	http.HandleFunc("/logout", logOutHandler)
 	http.HandleFunc("/createpost", serveCreatePostPage)
 	http.HandleFunc("/", homeHandler)
@@ -491,7 +488,7 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.ServeFile(w, r, "templates/index.html")
+	http.ServeFile(w, r, "templates/newpage.html")
 }
 
 
@@ -538,10 +535,12 @@ func likesToPostsAndComments(db *sql.DB, posts []Post) error {
 }
 
 func homePageHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
+	// if r.Method != http.MethodGet {
+	// 	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	// 	return
+	// }
+
+	//i had to outcomment it because i am calling this handler from another handler
 
 	posts, err := getPostsFromDatabase(db, "normal", "")
 	comments, err := getCommentsFromDatabase(db)
@@ -561,9 +560,45 @@ func homePageHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		}
 		moderationRequests, err = helpers.SQLSelectModeratorRequest(db, false)
 		count, err = helpers.CountSQL(db, "reportedRequests", "")
+	} else {
+		fmt.Println("This is usersession in homepagehandler \n", userSession)
+		fmt.Println("This is error", err)
 	}
 
 	// admin pw is Admin123
+
+	// if err != nil {
+	// 	// if error exists, mean there is no session and show view page only.
+	// 	t, err := template.ParseFiles("templates/homepageview.html")
+	// 	if err != nil {
+	// 		fmt.Printf("Error parsing template %v:", err)
+	// 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	// 		return
+	// 	}
+
+	// 	err = t.Execute(w, data)
+	// 	if err != nil {
+	// 		fmt.Printf("Error executing template %v:", err)
+	// 		http.Error(w, "Error executing template", http.StatusInternalServerError)
+	// 		return
+	// 	}
+	// } else {
+
+	// 	t, err := template.ParseFiles("templates/homepage.html")
+	// 	if err != nil {
+	// 		fmt.Printf("Error parsing template %v:", err)
+	// 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	// 		return
+	// 	}
+
+	// 	err = t.Execute(w, data)
+	// 	if err != nil {
+	// 		fmt.Printf("Error executing template %v:", err)
+	// 		http.Error(w, "Error executing template", http.StatusInternalServerError)
+	// 		return
+	// 	}
+
+	// }
 	data := HomePageData{
 		Username:           username,
 		Posts:              posts,
@@ -571,53 +606,63 @@ func homePageHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		ModerationRequests: moderationRequests,
 		ReportedRequests:   count,
 	}
+	fmt.Println("HomepageHandler got called!")
+	fmt.Println(data)
+	jsonData, err := json.Marshal(data)
 	if err != nil {
-		// if error exists, mean there is no session and show view page only.
-		t, err := template.ParseFiles("templates/homepageview.html")
-		if err != nil {
-			fmt.Printf("Error parsing template %v:", err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			return
-		}
-
-		err = t.Execute(w, data)
-		if err != nil {
-			fmt.Printf("Error executing template %v:", err)
-			http.Error(w, "Error executing template", http.StatusInternalServerError)
-			return
-		}
-	} else {
-
-		t, err := template.ParseFiles("templates/homepage.html")
-		if err != nil {
-			fmt.Printf("Error parsing template %v:", err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			return
-		}
-
-		err = t.Execute(w, data)
-		if err != nil {
-			fmt.Printf("Error executing template %v:", err)
-			http.Error(w, "Error executing template", http.StatusInternalServerError)
-			return
-		}
-
+		fmt.Printf("Could now marshal data %s\n", err)
+		return
 	}
+	fmt.Println(string(jsonData))
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(jsonData)	
 }
 
 func registerHandler(w http.ResponseWriter, r *http.Request) {
-	var data any
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	fmt.Println("early success")
+	var response struct {
+		Success bool `json:success`
+		Message string `json:"message`
+	}
+
+	if r.Method != http.MethodPost{
+		response.Success = false
+		response.Message = "Method not allowed"
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		json.NewEncoder(w).Encode(response)
 		return
 	}
 
 	err := r.ParseForm()
 	if err != nil {
-		http.Error(w, "Error parsing form", http.StatusBadGateway)
+		response.Success = false
+		response.Message = "Error parsing form"
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(response)
+		return
+	} else {
+		fmt.Println("this is not error ")
+	}
+	var requestData struct {
+		Username            string `json:"username"`
+		PasswordRaw         string `json:"password"`
+		Email               string `json:"email"`
+		AppliesForModerator string `json:"checkbox"`
+	}
+	
+	err = json.NewDecoder(r.Body).Decode(&requestData)
+	if err != nil {
+		fmt.Println("Failed to decode request body in: registerHandler")
+		http.Error(w, "Failed to decode request body", http.StatusBadRequest)
 		return
 	}
+	
+	username2 := requestData.Username
+	email2 := requestData.Email
+	appliesForModerator2 := requestData.AppliesForModerator
 
+	body := r.FormValue("body")
+	fmt.Println("abybody_", body)
 	username := r.FormValue("username")
 	passwordRaw := r.FormValue("password")
 	password, err := helpers.PasswordCrypter(passwordRaw)
@@ -625,39 +670,35 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to hash password", http.StatusInternalServerError)
 	}
 	email := r.FormValue("email")
-	appliesForModerator := r.FormValue("checkbox")
+	//appliesForModerator := r.FormValue("checkbox")
+	fmt.Println(username, passwordRaw, email, "empty?")
 
 	var apply int
 
-	if appliesForModerator != "" {
+	if appliesForModerator2 != "" {
 		apply = 1
 	} else {
 		apply = 0
 	}
 
-	err = helpers.InitalizeDb(username, string(password), email, "user", apply)
+	err = helpers.InitalizeDb(username2, string(password), email2, "user", apply)
 	if err != nil {
-		errMessage, httpCode := helpers.ErrorCheck(err)
-		data = struct {
-			Message string
-			Code    uint
-		}{
-			Message: errMessage,
-			Code:    httpCode,
-		}
+		
+		errMessage, _ := helpers.ErrorCheck(err)
+		response.Success = false
+		response.Message = errMessage
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(response)
+		return
+	} else {
+		fmt.Println(err, "is error")
 	}
 
-	t, err2 := template.ParseFiles("templates/register.html")
-	if err2 != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
+	response.Success = true
+	response.Message = "Registration successful"
+	json.NewEncoder(w).Encode(response)
 
-	err2 = t.Execute(w, data)
-	if err2 != nil {
-		http.Error(w, err2.Error(), http.StatusInternalServerError)
-		return
-	}
+	fmt.Println("success")
 }
 
 
@@ -667,35 +708,64 @@ func loginHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	// 	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	// 	return
 	// }
+	// w.Header().Set("Access-Control-Allow-Origin", "*") // This allows any website to access this API. Adjust as needed for security reasons.
+    // w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+    // w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization")
 
-	err := r.ParseForm()
+    // // If it's just an OPTIONS request (pre-flight), then just return with an OK status.
+    // if r.Method == "OPTIONS" {
+    //     w.WriteHeader(http.StatusOK)
+    //     return
+    // }
+
+	var requestData map[string]string
+	err := json.NewDecoder(r.Body).Decode(&requestData)
+	if err != nil {
+		bodyBytes, _ := ioutil.ReadAll(r.Body)
+		fmt.Println("Raw body:", string(bodyBytes))
+		http.Error(w, "Error decoding request body", http.StatusBadRequest)
+		return
+	}
+
+
+
+
+	err = r.ParseForm()
 	if err != nil {
 		http.Error(w, "Error parsing form", http.StatusBadGateway)
 		return
 	}
+	fmt.Println("Inside loginhandler2")
 
 	username := r.FormValue("login-username")
 	password := r.FormValue("login-password")
-
+	username = requestData["login-username"]
+	password = requestData["login-password"]
+	fmt.Println("this is password", password, username)
 	row := db.QueryRow("SELECT password FROM users WHERE username = ?;", username)
 
 	var hashedPassword string
 	err = row.Scan(&hashedPassword) 
 
 	if err == sql.ErrNoRows {
+		fmt.Println("Err1")
 		http.Redirect(w, r, "/registration.html?error=Invalid username or password!", http.StatusSeeOther)
 		return
 	} else if err != nil {
+		fmt.Println("Err2")
 		http.Error(w, "Failed to execute query", http.StatusInternalServerError)
 		return
 	}
 
 	match, err := helpers.PasswordCheck(password, hashedPassword)
-
+	fmt.Println("Inside loginhandler3")
 	if match == true {
-		helpers.CreateSession(w, r, username) 
-		http.Redirect(w, r, "homepage.html", http.StatusSeeOther)
+		helpers.CreateSession(w, r, username)
+        http.Redirect(w, r, "/homepage", http.StatusSeeOther)  // Assuming "/home" is the route for the homePageHandler
+		fmt.Println("Login handler got called with correct password")
 	} else {
+		fmt.Println("Login handler got called with wrong password")
+
 		http.Redirect(w, r, "/registration.html?error=Invalid username or password!", http.StatusSeeOther)
 	}
 }

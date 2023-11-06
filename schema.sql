@@ -56,4 +56,3 @@ CREATE TABLE IF NOT EXISTS comment_votes (
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
--- INSERT INTO categories (name) VALUES ('league'), ('runescape'), ('counter-strike');
