@@ -3,14 +3,18 @@
 // }
 
 import { data, fetchDataFromServer, loginHandler} from './registration.js'
+import { displayComments } from '/static/displayComments.js';
+import { changeColor } from '/static/changeColor.js'; // Replace 'function1' with the actual function name
+import { commentsScript } from '/static/commentsScript.js'; // Replace 'function2' with the actual function name
+import { likesFunction } from '/static/likesFunction.js'; // Replace 'function3' with the actual function name
 
 export async function mainPage() {
 
-    // const body = document.getElementById('body');
-    // body.className = 'bg-gray-100';
+    const body = document.getElementById('body');
+    body.className = 'bg-gray-100';
   console.log("This is ducked")
   const appDiv = document.getElementById('app');
-
+        appDiv.className = ''
   // Clear the content of appDiv
   appDiv.innerHTML = '';
 
@@ -199,7 +203,7 @@ console.log("do i arrive to the data.posts?")
       const innerPostDiv = document.createElement('div')
       innerPostDiv.className = 'flex flex-col p-6 bg-gray-200 mb-4 rounded'
       innerPostDiv.style = 'max-width: 800px; margin: 1rem auto;'
-      postDiv.appendChild(innerPostDiv)
+      //postDiv.appendChild(innerPostDiv)
         const innerPostDiv2 = document.createElement('div')
         innerPostDiv2.className = 'bg-gray-300'
         innerPostDiv.appendChild(innerPostDiv2)
@@ -257,12 +261,15 @@ console.log("do i arrive to the data.posts?")
         const commentsSection = document.createElement('div')
         commentsSection.id = 'comments' + post.ID 
         commentsSection.className = 'comments'
-        commentsSection.style = 'display: none;'
+        commentsSection.style.display = 'none'
             //append text
             const commentSectionText = document.createElement('p')
             commentSectionText.textContent = 'Comment section 💬'
             //range comments
+            console.log(post.Comments)
+            if (post.Comments) {
             post.Comments.forEach(comment =>{
+                console.log(comment)
                 const commentDiv = document.createElement('div')
                 commentDiv.className = 'comment border rounded my-1 ml-24'
                     const commentInnerDiv = document.createElement('div')
@@ -302,8 +309,13 @@ console.log("do i arrive to the data.posts?")
                             
                     commentInnerDiv.appendChild(commentFlexBox)
                 commentDiv.appendChild(commentInnerDiv)
-           innerPostDiv.appendChild(commentDiv)
+             commentsSection.appendChild(commentDiv);
+             //   innerPostDiv.appendChild(commentDiv)
+
             })
+        }
+            innerPostDiv.appendChild(commentsSection)
+
             // i am not entirely sure where i put this line
         // innerPostDiv.appendChild(commentDiv)
             const addCommentForm = document.createElement('form')
@@ -321,12 +333,20 @@ console.log("do i arrive to the data.posts?")
                 inputAddComment2.value = 'Comment'
                 inputAddComment2.className = 'submit-button bg-gray-300 hover:bg-gray-400 text-black p-2 mt-4 rounded'
                 addCommentForm.appendChild(inputAddComment2)
-            if (data.Role = 'moderator') {
-                const moderator = document.createElement('form')
-                moderator.action = '/delete'
-                moderator.method = 'post'
-                moderator.innerHTML = `<button type="submit" class="submit-button ml-auto bg-red-700 hover:bg-red-800 border rounded p-2 mt-4 " name = "report" value =${post.ID} >Report this post!</button>`
-                innerPostDiv.appendChild(moderator)
+            if (data.Role == 'moderator') {
+                const moderatorForm = document.createElement('form');
+                moderatorForm.action = '/delete';
+                moderatorForm.method = 'post';
+
+                const reportButton = document.createElement('button');
+                reportButton.type = 'submit';
+                reportButton.className = 'submit-button ml-auto bg-red-700 hover:bg-red-800 border rounded p-2 mt-4';
+                reportButton.name = 'report';
+                reportButton.value = post.ID;
+                reportButton.textContent = 'Report this post!';
+
+                moderatorForm.appendChild(reportButton);
+                innerPostDiv.appendChild(moderatorForm);
 
             }
             innerPostDiv.appendChild(addCommentForm)
@@ -336,15 +356,15 @@ console.log("do i arrive to the data.posts?")
         
       // Populate postDiv with post data
       // ... similar logic as above, create elements and append them ...
+   // Append the innerPostDiv to the postDiv
+        postDiv.appendChild(innerPostDiv);
+
+        // Append the postDiv to the appDiv
 
       appDiv.appendChild(postDiv);
   });
 
-  // Add scripts
-  const script1 = document.createElement('script');
-  script1.src = '/static/changeColor.js';
-  appDiv.appendChild(script1);
-  // ... add other scripts ...
+
 
   // If no posts, display a message
   if (!data.Posts || data.Posts.length === 0) {
@@ -353,4 +373,25 @@ console.log("do i arrive to the data.posts?")
       message.textContent = 'No categories chosen, please choose categories.';
       appDiv.appendChild(message);
   }
+    // Add scripts
+//   const script1 = document.createElement('script');
+//   script1.src = '/static/changeColor.js';
+const scriptArr = ["changeColor.js", "displayComments.js", "likesFunction.js", "commentsScript.js"]
+scriptArr.forEach(script => {
+  let script2 = document.createElement('script');
+  script2.src = `../static/${script}`
+    script2.type = 'module'
+  
+
+  body.appendChild(script2)
+
+  
+})
+// appDiv.appendChild(script1);
+// ... add other scripts ...
+displayComments()
+commentsScript()
+likesFunction()
+
+
 }
