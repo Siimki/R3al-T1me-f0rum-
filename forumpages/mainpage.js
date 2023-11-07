@@ -8,8 +8,14 @@ import { changeColor } from '/static/changeColor.js'; // Replace 'function1' wit
 import { commentsScript } from '/static/commentsScript.js'; // Replace 'function2' with the actual function name
 import { likesFunction } from '/static/likesFunction.js'; // Replace 'function3' with the actual function name
 
-export async function mainPage() {
 
+
+export async function mainPage() {
+    if (!data) {
+        console.log("data not exist, start fetch")
+        data = fetchDataFromServer()
+    }
+    
     const body = document.getElementById('body');
     body.className = 'bg-gray-100';
   console.log("This is ducked")

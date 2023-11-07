@@ -32,11 +32,13 @@ type Post struct {
 
 type HomePageData struct {
 	Username           string
+	Usernames			[]string
 	Posts              []Post
 	Role               string
 	ModerationRequests []string
 	Moderators         []string
 	ReportedRequests   int
+	
 }
 
 type Comment struct {
@@ -94,6 +96,7 @@ func main() {
 	fmt.Println("Server started on port 8080.")
 	http.ListenAndServe(":8080", nil)
 }
+
 
 
 
@@ -546,6 +549,10 @@ func homePageHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	comments, err := getCommentsFromDatabase(db)
 	posts = addCommentsToPost(posts, comments)
 	likesToPostsAndComments(db, posts)
+	usernames, err := helpers.GetUsernames(db)
+	if err != nil {
+		fmt.Println("This is error:", err)
+	}
 
 	userSession, err := helpers.ValidateSessionFromCookie(w, r)
 	var username string
@@ -566,56 +573,43 @@ func homePageHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	}
 
 	// admin pw is Admin123
-
-	// if err != nil {
-	// 	// if error exists, mean there is no session and show view page only.
-	// 	t, err := template.ParseFiles("templates/homepageview.html")
-	// 	if err != nil {
-	// 		fmt.Printf("Error parsing template %v:", err)
-	// 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-	// 		return
-	// 	}
-
-	// 	err = t.Execute(w, data)
-	// 	if err != nil {
-	// 		fmt.Printf("Error executing template %v:", err)
-	// 		http.Error(w, "Error executing template", http.StatusInternalServerError)
-	// 		return
-	// 	}
-	// } else {
-
-	// 	t, err := template.ParseFiles("templates/homepage.html")
-	// 	if err != nil {
-	// 		fmt.Printf("Error parsing template %v:", err)
-	// 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-	// 		return
-	// 	}
-
-	// 	err = t.Execute(w, data)
-	// 	if err != nil {
-	// 		fmt.Printf("Error executing template %v:", err)
-	// 		http.Error(w, "Error executing template", http.StatusInternalServerError)
-	// 		return
-	// 	}
-
-	// }
+	
 	data := HomePageData{
 		Username:           username,
+		Usernames:			usernames,
 		Posts:              posts,
 		Role:               role,
 		ModerationRequests: moderationRequests,
 		ReportedRequests:   count,
 	}
+
 	fmt.Println("HomepageHandler got called!")
-	fmt.Println(data)
-	jsonData, err := json.Marshal(data)
+	//fmt.Println(data)
+
+		
+
 	if err != nil {
-		fmt.Printf("Could now marshal data %s\n", err)
-		return
+		// if error exists, mean there is no session and show view page only.
+		var rawMessage = "Usersession is not valid! Proceed to registration page!"
+
+		message, err := json.Marshal(rawMessage)
+		if err != nil {
+			fmt.Printf("Could now marshal data %s\n", err)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(message)
+	} else {
+		//fmt.Println(string(jsonData))
+		jsonData, err := json.Marshal(data)
+		if err != nil {
+			fmt.Printf("Could now marshal data %s\n", err)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(jsonData)
 	}
-	fmt.Println(string(jsonData))
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(jsonData)	
+
 }
 
 func registerHandler(w http.ResponseWriter, r *http.Request) {
@@ -660,18 +654,19 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 	username2 := requestData.Username
 	email2 := requestData.Email
 	appliesForModerator2 := requestData.AppliesForModerator
+	password2 := requestData.PasswordRaw
 
 	body := r.FormValue("body")
 	fmt.Println("abybody_", body)
-	username := r.FormValue("username")
-	passwordRaw := r.FormValue("password")
-	password, err := helpers.PasswordCrypter(passwordRaw)
+	//username := r.FormValue("username")
+	//passwordRaw := r.FormValue("password")
+	cryptedPassword, err := helpers.PasswordCrypter(password2)
 	if err != nil {
 		http.Error(w, "Failed to hash password", http.StatusInternalServerError)
 	}
 	email := r.FormValue("email")
 	//appliesForModerator := r.FormValue("checkbox")
-	fmt.Println(username, passwordRaw, email, "empty?")
+	fmt.Println(username2, password2, email, "empty?")
 
 	var apply int
 
@@ -681,7 +676,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 		apply = 0
 	}
 
-	err = helpers.InitalizeDb(username2, string(password), email2, "user", apply)
+	err = helpers.InitalizeDb(username2, string(cryptedPassword), email2, "user", apply)
 	if err != nil {
 		
 		errMessage, _ := helpers.ErrorCheck(err)

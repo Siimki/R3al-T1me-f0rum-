@@ -1,12 +1,17 @@
 window.addEventListener('load', function() {
     let lastPage = localStorage.getItem('lastActivePage') || 'registration';
     console.log("LastPage is:", lastPage)
-    loadPage('registration');
+    if (lastPage == 'registered') {
+        loadPage('registration')
+    } else {
+        loadPage(lastPage);
+
+    }
 });
 
 
  function loadPage(pageName) {
-
+//if cookie is not exist always go to registration page 
     localStorage.setItem('lastActivePage', pageName);
 
     switch(pageName) {
@@ -30,6 +35,9 @@ window.addEventListener('load', function() {
             });
            break;
         default:
+            import('../forumpages/registration.js').then(module => {
+                module.loadRegistrationForm();
+            })
             console.log('Page not found');
     }
 }

@@ -82,8 +82,11 @@ export async function loadRegistrationForm() {
             console.error('There was an error with the registration', error);
         }
     });
+
     var loginForm = document.querySelector('form[action="/login"]')
+
     loginForm.addEventListener('submit', async function(event) {
+
         event.preventDefault();
         console.log("come here?")
         try {
@@ -91,6 +94,7 @@ export async function loadRegistrationForm() {
         } catch (error) {
             console.error('Error during login', error);
         }
+
     });
     
   
@@ -148,6 +152,7 @@ export async function fetchDataFromServer() {
         loadPage('login');
     } catch (error) {
         console.error('There was an error fetching the login data', error);
+        loadPage('registration ');
     }
     return data
 }

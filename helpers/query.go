@@ -11,6 +11,33 @@ import (
 	"log"
 )
 
+func GetUsernames(db *sql.DB) ( usernames []string, err error) {
+	var rows *sql.Rows
+	rows, err = db.Query("SELECT username FROM users;")
+		if err != nil {
+			return nil , fmt.Errorf("Failed to execute query: %v", err)
+		}
+		if rows != nil {
+			defer rows.Close()
+	
+			var usernames []string
+			for rows.Next() {
+				var username string
+				if err := rows.Scan(&username); err != nil {
+					return nil , fmt.Errorf("Failed to scan row: %v", err)
+				}
+				usernames = append(usernames, username)
+			}
+	
+			if err := rows.Err(); err != nil {
+				return nil , fmt.Errorf("Failed after iterating rows: %v", err)
+			}
+	
+			return usernames, nil
+		}		
+	return 
+}
+
 func SQLAuthorize(w http.ResponseWriter, r *http.Request, db *sql.DB, username string, email string) {
 
 	count, _ := CountSQL(db, "usernameCheck", username)
