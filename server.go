@@ -5,18 +5,16 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"forum/helpers"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
 	"text/template"
 	"time"
-	"forum/helpers"
+
 	_ "github.com/mattn/go-sqlite3"
-
 )
-
-
 
 type Post struct {
 	ID           int
@@ -32,13 +30,12 @@ type Post struct {
 
 type HomePageData struct {
 	Username           string
-	Usernames			[]string
+	Usernames          []string
 	Posts              []Post
 	Role               string
 	ModerationRequests []string
 	Moderators         []string
 	ReportedRequests   int
-	
 }
 
 type Comment struct {
@@ -61,7 +58,7 @@ func main() {
 
 	db, err := helpers.GetDbConnection()
 	if err != nil {
-	  log.Fatalf("failed to prepare database connection: %v", err)
+		log.Fatalf("failed to prepare database connection: %v", err)
 	}
 	defer db.Close()
 
@@ -69,13 +66,12 @@ func main() {
 	http.Handle("/dist/", http.StripPrefix("/dist/", http.FileServer(http.Dir("dist"))))
 	http.Handle("/forumpages/", http.StripPrefix("/forumpages/", http.FileServer(http.Dir("forumpages"))))
 
-
-	http.HandleFunc("/callback", func(w http.ResponseWriter, r *http.Request) { handleCallback(w, r, db)})
-	http.HandleFunc("/callbackgithub", func(w http.ResponseWriter, r *http.Request) { HandleCallbackGithub(w, r, db)})
+	http.HandleFunc("/callback", func(w http.ResponseWriter, r *http.Request) { handleCallback(w, r, db) })
+	http.HandleFunc("/callbackgithub", func(w http.ResponseWriter, r *http.Request) { HandleCallbackGithub(w, r, db) })
 	http.HandleFunc("/auth/google", helpers.HandleLogin)
 	http.HandleFunc("/auth/github", handleGithubLogin)
 	http.HandleFunc("/report", func(w http.ResponseWriter, r *http.Request) { reportPostHandler(w, r, db) })
-	http.HandleFunc("/delete", func(w http.ResponseWriter, r *http.Request) { deletePostHandler(w, r, db) })	
+	http.HandleFunc("/delete", func(w http.ResponseWriter, r *http.Request) { deletePostHandler(w, r, db) })
 	http.HandleFunc("/admin", func(w http.ResponseWriter, r *http.Request) { admin(w, r, db) })
 	http.HandleFunc("/submitpost", func(w http.ResponseWriter, r *http.Request) { createPost(w, r, db) })
 	http.HandleFunc("/myposts", func(w http.ResponseWriter, r *http.Request) { showMyPostsHandler(w, r, db) })
@@ -97,20 +93,17 @@ func main() {
 	http.ListenAndServe(":8080", nil)
 }
 
-
-
-
 func handleGithubLogin(w http.ResponseWriter, r *http.Request) {
-	 githubClientID := "25d7ff2314f58883dc2a"
+	githubClientID := "25d7ff2314f58883dc2a"
 
-	 // Create the dynamic redirect URL for login
-	 redirectURL := fmt.Sprintf(
-		 "https://github.com/login/oauth/authorize?client_id=%s&redirect_uri=%s",
-		 githubClientID,
-		 "http://localhost:8080/callbackgithub",
-		)
- 
-	 http.Redirect(w, r, redirectURL, 301)
+	// Create the dynamic redirect URL for login
+	redirectURL := fmt.Sprintf(
+		"https://github.com/login/oauth/authorize?client_id=%s&redirect_uri=%s",
+		githubClientID,
+		"http://localhost:8080/callbackgithub",
+	)
+
+	http.Redirect(w, r, redirectURL, http.StatusMovedPermanently)
 
 }
 
@@ -131,37 +124,37 @@ func handleCallback(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 
 	resp, err := http.Get("https://www.googleapis.com/oauth2/v2/userinfo?access_token=" + token.AccessToken)
 	if err != nil {
-		fmt.Println("Could not create get request: %s/n", err.Error())
+		fmt.Printf("Could not create get request: %s/n", err.Error())
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
-		return	
+		return
 	}
 
 	defer resp.Body.Close()
 	content, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println("Could not  parse response : %s/n", err.Error())
+		fmt.Printf("Could not  parse response : %s/n", err.Error())
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
-	} 
+	}
 
 	var GoogleResponse helpers.GoogleResponse
-	if err := json.Unmarshal(content, &GoogleResponse) ; err != nil {
+	if err := json.Unmarshal(content, &GoogleResponse); err != nil {
 		fmt.Printf("Error unmarshalling response: %s\n", err.Error())
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
 
-	helpers.SQLAuthorize(w,r,db,GoogleResponse.Name, GoogleResponse.Email)
-	
+	helpers.SQLAuthorize(w, r, db, GoogleResponse.Name, GoogleResponse.Email)
+
 }
 func HandleCallbackGithub(w http.ResponseWriter, r *http.Request, db *sql.DB) {
-    code := r.URL.Query().Get("code")
+	code := r.URL.Query().Get("code")
 
-    githubAccessToken := helpers.GetGithubAccessToken(code)
+	githubAccessToken := helpers.GetGithubAccessToken(code)
 
-    username := helpers.GetGithubData(githubAccessToken)
+	username := helpers.GetGithubData(githubAccessToken)
 
-    helpers.SQLAuthorize(w,r,db,username,"")
+	helpers.SQLAuthorize(w, r, db, username, "")
 
 }
 
@@ -348,8 +341,8 @@ func admin(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		}
 	}
 
-	moderationRequests, err = helpers.SQLSelectModeratorRequest(db, false)
-	moderators, err := helpers.SQLSelectModeratorRequest(db, true)
+	moderationRequests, _ = helpers.SQLSelectModeratorRequest(db, false)
+	moderators, _ := helpers.SQLSelectModeratorRequest(db, true)
 
 	data := HomePageData{
 		Moderators:         moderators,
@@ -390,14 +383,16 @@ func submitComment(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		return
 	}
 
-	userSession, err := helpers.ValidateSessionFromCookie(w, r)
+	userSession, _ := helpers.ValidateSessionFromCookie(w, r)
 	userID := helpers.SQLSelectUserID(db, userSession.Username)
 
-	if comment != "" {
-		if err := helpers.SQLInsertComment(db, postID, comment, userID); err != nil {
-		}
-	} else {
+	if comment == "" {
 		http.Error(w, "Creating empty comment is forbidden.", http.StatusBadRequest)
+
+	} else {
+		if err := helpers.SQLInsertComment(db, postID, comment, userID); err != nil {
+			http.Error(w, "Error inserting comment", http.StatusInternalServerError)
+		}
 	}
 
 	http.Redirect(w, r, "homepage.html", http.StatusSeeOther)
@@ -446,7 +441,7 @@ func createPost(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 
 	postContent := r.FormValue("postContent")
 
-	userSession, err := helpers.ValidateSessionFromCookie(w, r)
+	userSession, _ := helpers.ValidateSessionFromCookie(w, r)
 
 	userID := helpers.SQLSelectUserID(db, userSession.Username)
 	if postContent != "" {
@@ -493,7 +488,6 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 
 	http.ServeFile(w, r, "templates/newpage.html")
 }
-
 
 func likesToPostsAndComments(db *sql.DB, posts []Post) error {
 	for i := range posts {
@@ -545,8 +539,8 @@ func homePageHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 
 	//i had to outcomment it because i am calling this handler from another handler
 
-	posts, err := getPostsFromDatabase(db, "normal", "")
-	comments, err := getCommentsFromDatabase(db)
+	posts, _ := getPostsFromDatabase(db, "normal", "")
+	comments, _ := getCommentsFromDatabase(db)
 	posts = addCommentsToPost(posts, comments)
 	likesToPostsAndComments(db, posts)
 	usernames, err := helpers.GetUsernames(db)
@@ -565,7 +559,7 @@ func homePageHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		if err != nil {
 			fmt.Println("Failed to get role")
 		}
-		moderationRequests, err = helpers.SQLSelectModeratorRequest(db, false)
+		moderationRequests, _ = helpers.SQLSelectModeratorRequest(db, false)
 		count, err = helpers.CountSQL(db, "reportedRequests", "")
 	} else {
 		fmt.Println("This is usersession in homepagehandler \n", userSession)
@@ -573,10 +567,10 @@ func homePageHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	}
 
 	// admin pw is Admin123
-	
+
 	data := HomePageData{
 		Username:           username,
-		Usernames:			usernames,
+		Usernames:          usernames,
 		Posts:              posts,
 		Role:               role,
 		ModerationRequests: moderationRequests,
@@ -585,8 +579,6 @@ func homePageHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 
 	fmt.Println("HomepageHandler got called!")
 	//fmt.Println(data)
-
-		
 
 	if err != nil {
 		// if error exists, mean there is no session and show view page only.
@@ -615,11 +607,11 @@ func homePageHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 func registerHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("early success")
 	var response struct {
-		Success bool `json:success`
-		Message string `json:"message`
+		Success bool   `json:"success"`
+		Message string `json:"message"`
 	}
 
-	if r.Method != http.MethodPost{
+	if r.Method != http.MethodPost {
 		response.Success = false
 		response.Message = "Method not allowed"
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -643,14 +635,14 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 		Email               string `json:"email"`
 		AppliesForModerator string `json:"checkbox"`
 	}
-	
+
 	err = json.NewDecoder(r.Body).Decode(&requestData)
 	if err != nil {
 		fmt.Println("Failed to decode request body in: registerHandler")
 		http.Error(w, "Failed to decode request body", http.StatusBadRequest)
 		return
 	}
-	
+
 	username2 := requestData.Username
 	email2 := requestData.Email
 	appliesForModerator2 := requestData.AppliesForModerator
@@ -678,7 +670,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = helpers.InitalizeDb(username2, string(cryptedPassword), email2, "user", apply)
 	if err != nil {
-		
+
 		errMessage, _ := helpers.ErrorCheck(err)
 		response.Success = false
 		response.Message = errMessage
@@ -696,22 +688,20 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("success")
 }
 
-
-
 func loginHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	// if r.Method != http.MethodPost {
 	// 	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	// 	return
 	// }
 	// w.Header().Set("Access-Control-Allow-Origin", "*") // This allows any website to access this API. Adjust as needed for security reasons.
-    // w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-    // w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization")
+	// w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+	// w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization")
 
-    // // If it's just an OPTIONS request (pre-flight), then just return with an OK status.
-    // if r.Method == "OPTIONS" {
-    //     w.WriteHeader(http.StatusOK)
-    //     return
-    // }
+	// // If it's just an OPTIONS request (pre-flight), then just return with an OK status.
+	// if r.Method == "OPTIONS" {
+	//     w.WriteHeader(http.StatusOK)
+	//     return
+	// }
 
 	var requestData map[string]string
 	err := json.NewDecoder(r.Body).Decode(&requestData)
@@ -722,9 +712,6 @@ func loginHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		return
 	}
 
-
-
-
 	err = r.ParseForm()
 	if err != nil {
 		http.Error(w, "Error parsing form", http.StatusBadGateway)
@@ -732,15 +719,13 @@ func loginHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	}
 	fmt.Println("Inside loginhandler2")
 
-	username := r.FormValue("login-username")
-	password := r.FormValue("login-password")
-	username = requestData["login-username"]
-	password = requestData["login-password"]
+	username := requestData["login-username"]
+	password := requestData["login-password"]
 	fmt.Println("this is password", password, username)
 	row := db.QueryRow("SELECT password FROM users WHERE username = ?;", username)
 
 	var hashedPassword string
-	err = row.Scan(&hashedPassword) 
+	err = row.Scan(&hashedPassword)
 
 	if err == sql.ErrNoRows {
 		fmt.Println("Err1")
@@ -752,11 +737,11 @@ func loginHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		return
 	}
 
-	match, err := helpers.PasswordCheck(password, hashedPassword)
+	match, _ := helpers.PasswordCheck(password, hashedPassword)
 	fmt.Println("Inside loginhandler3")
-	if match == true {
+	if match {
 		helpers.CreateSession(w, r, username)
-        http.Redirect(w, r, "/homepage", http.StatusSeeOther)  // Assuming "/home" is the route for the homePageHandler
+		http.Redirect(w, r, "/homepage", http.StatusSeeOther) // Assuming "/home" is the route for the homePageHandler
 		fmt.Println("Login handler got called with correct password")
 	} else {
 		fmt.Println("Login handler got called with wrong password")
@@ -764,8 +749,6 @@ func loginHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		http.Redirect(w, r, "/registration.html?error=Invalid username or password!", http.StatusSeeOther)
 	}
 }
-
-
 
 func getReportedPostsFromDatabase(db *sql.DB) ([]Post, error) {
 	rows, err := db.Query("SELECT posts.id, posts.content, posts.created_at, users.username FROM posts JOIN users ON posts.user_id = users.id WHERE flagged = 1;")
@@ -780,19 +763,19 @@ func getReportedPostsFromDatabase(db *sql.DB) ([]Post, error) {
 		for rows.Next() {
 			var post Post
 			if err := rows.Scan(&post.ID, &post.Content, &post.CreatedAt, &post.Username); err != nil {
-				return nil, fmt.Errorf("Failed to scan row: %v", err)
+				return nil, fmt.Errorf("failed to scan row: %v", err)
 			}
 			posts = append(posts, post)
 		}
 
 		if err := rows.Err(); err != nil {
-			return nil, fmt.Errorf("Failed after iterating rows: %v", err)
+			return nil, fmt.Errorf("failed after iterating rows: %v", err)
 		}
 
 		return posts, nil
 	}
 
-	return nil, fmt.Errorf("No rows to return")
+	return nil, fmt.Errorf("no rows to return")
 }
 
 func getPostsFromDatabase(db *sql.DB, postsQuery string, username string) ([]Post, error) {
@@ -802,7 +785,7 @@ func getPostsFromDatabase(db *sql.DB, postsQuery string, username string) ([]Pos
 	if postsQuery == "normal" {
 		rows, err = db.Query("SELECT posts.id, posts.content,  posts.created_at, users.username FROM posts JOIN users ON posts.user_id = users.id;")
 		if err != nil {
-			return nil, fmt.Errorf("Failed to execute query: %v", err)
+			return nil, fmt.Errorf("failed to execute query: %v", err)
 		}
 	} else if postsQuery == "myposts" {
 		rows, err = db.Query(`SELECT posts.id, posts.content, posts.created_at, users.username 
@@ -810,7 +793,7 @@ func getPostsFromDatabase(db *sql.DB, postsQuery string, username string) ([]Pos
 		JOIN users ON posts.user_id = users.id 
 		WHERE users.username = ?;`, username)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to execute query: %v", err)
+			return nil, fmt.Errorf("failed to execute query: %v", err)
 		}
 	} else if postsQuery == "mylikedposts" {
 		// Merci
@@ -832,12 +815,12 @@ func getPostsFromDatabase(db *sql.DB, postsQuery string, username string) ([]Pos
 		AND post_votes.vote_type = 'like';
 	`, username)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to execute query: %v", err)
+			return nil, fmt.Errorf("failed to execute query: %v", err)
 		}
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("Failed to execute query: %v", err)
+		return nil, fmt.Errorf("failed to execute query: %v", err)
 	}
 
 	if rows != nil {
@@ -847,27 +830,25 @@ func getPostsFromDatabase(db *sql.DB, postsQuery string, username string) ([]Pos
 		for rows.Next() {
 			var post Post
 			if err := rows.Scan(&post.ID, &post.Content, &post.CreatedAt, &post.Username); err != nil {
-				return nil, fmt.Errorf("Failed to scan row: %v", err)
+				return nil, fmt.Errorf("failed to scan row: %v", err)
 			}
 			posts = append(posts, post)
 		}
 
 		if err := rows.Err(); err != nil {
-			return nil, fmt.Errorf("Failed after iterating rows: %v", err)
+			return nil, fmt.Errorf("failed after iterating rows: %v", err)
 		}
 
 		return posts, nil
 	}
 
-	return nil, fmt.Errorf("No rows to return")
+	return nil, fmt.Errorf("fo rows to return")
 }
-
-
 
 func getCommentsFromDatabase(db *sql.DB) ([]Comment, error) {
 	rows, err := db.Query("SELECT comments.id, comments.content, comments.created_at, posts.id AS post_id, users.username FROM comments JOIN posts ON comments.post_id = posts.id JOIN users ON comments.user_id = users.id;")
 	if err != nil {
-		return nil, fmt.Errorf("Failed to execute query: %v", err)
+		return nil, fmt.Errorf("failed to execute query: %v", err)
 	}
 
 	defer rows.Close()
@@ -875,18 +856,16 @@ func getCommentsFromDatabase(db *sql.DB) ([]Comment, error) {
 	for rows.Next() {
 		var comment Comment
 		if err := rows.Scan(&comment.ID, &comment.Content, &comment.CreatedAt, &comment.PostID, &comment.Username); err != nil {
-			return nil, fmt.Errorf("Failed to scan row: %v", err)
+			return nil, fmt.Errorf("failed to scan row: %v", err)
 		}
 		comments = append(comments, comment)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("Failed after iterating rows: %v", err)
+		return nil, fmt.Errorf("failed after iterating rows: %v", err)
 	}
 	return comments, nil
 }
-
-
 
 func filterPosts(db *sql.DB, categories []int) (posts []Post, err error) {
 	postMap := make(map[int]Post)
@@ -899,14 +878,14 @@ func filterPosts(db *sql.DB, categories []int) (posts []Post, err error) {
 			JOIN users ON posts.user_id = users.id
 			WHERE post_categories.category_id = ?;`, category)
 			if err != nil {
-				return nil, fmt.Errorf("Failed to execute query: %v", err)
+				return nil, fmt.Errorf("failed to execute query: %v", err)
 			}
 			defer rows.Close()
 
 			for rows.Next() {
 				var post Post
 				if err := rows.Scan(&post.ID, &post.Content, &post.CreatedAt, &post.Username); err != nil {
-					return nil, fmt.Errorf("Failed to scan row: %v", err)
+					return nil, fmt.Errorf("failed to scan row: %v", err)
 				}
 				// If the post is not in the map, add it.
 				if _, exists := postMap[post.ID]; !exists {
@@ -915,7 +894,7 @@ func filterPosts(db *sql.DB, categories []int) (posts []Post, err error) {
 			}
 
 			if err := rows.Err(); err != nil {
-				return nil, fmt.Errorf("Failed after iterating rows: %v", err)
+				return nil, fmt.Errorf("failed after iterating rows: %v", err)
 			}
 		}
 	}
@@ -980,17 +959,16 @@ func showMyPostsHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		return
 	}
 
-
-	userSession, err := helpers.ValidateSessionFromCookie(w, r)
+	userSession, _ := helpers.ValidateSessionFromCookie(w, r)
 	var username string
 	var role string
 	if userSession != nil {
 		username = userSession.Username
-		role, err = helpers.SQLGetUserRole(db, userSession.Username)
+		role, _ = helpers.SQLGetUserRole(db, userSession.Username)
 	}
 
-	posts, err := getPostsFromDatabase(db, formValue, userSession.Username)
-	comments, err := getCommentsFromDatabase(db)
+	posts, _ := getPostsFromDatabase(db, formValue, userSession.Username)
+	comments, _ := getCommentsFromDatabase(db)
 
 	posts = addCommentsToPost(posts, comments)
 
@@ -1039,7 +1017,6 @@ func deletePostHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
 
 	err = helpers.SQLDeletePost(db, postID, status)
 	if err != nil {
