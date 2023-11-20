@@ -126,7 +126,7 @@ export async function loginHandler() {
         data = await response.json();
         console.log(data," this is the data");
         console.log(data.Username, "this is username")
-        loadPage('login');
+        window.location.hash = "#login";
     } catch (error) {
         console.error('There was an error fetching the login data', error);
     }
@@ -149,10 +149,10 @@ export async function fetchDataFromServer() {
         data = await response.json();
         console.log(data," this is the data");
         console.log(data.Username, "this is username")
-        loadPage('login');
+        window.location.hash = "#login";
     } catch (error) {
         console.error('There was an error fetching the login data', error);
-        loadPage('registration ');
+        window.location.hash = "#registration";
     }
     return data
 }

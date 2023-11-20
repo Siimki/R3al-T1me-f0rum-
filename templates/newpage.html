@@ -7,12 +7,39 @@
 </head>
 
 <body id ="body" class="bg-gray-200 min-h-screen flex items-center justify-center">
+  <!-- Sidebar container for user list -->
+  <button id="toggleUserListBtn">Toggle User List</button>
+  <div id="userList" class="user-list">
+  <!-- Dynamically populated user list will go here -->
+</div>
+
+<!-- Toggle button to open chatbox -->
+<button id="chatboxToggle">Open live chat!</button>
+
+<!-- Chatbox -->
+<div id="chatbox" class="chatbox">
+
+  <!-- Chat Header -->
+  <div class="chat-header">
+    <h2>Live Chat</h2>
+    <span class="close">&times;</span>
+  </div>
+
+  <!-- Messages container -->
+  <div class="messages" id="messages"></div>
+
+  <!-- Chat Footer -->
+  <div class="chat-footer">
+    <input type="text" id="messageInput" placeholder="Type your message">
+    <button id="sendMessage">Send</button>
+  </div>
+</div>
 
     <div id="app" class="bg-white p-8 rounded-lg shadow-md w-96">
         <!-- Content will be loaded here dynamically -->
     </div>
 
-    <script src="../forumpages/forum.js"></script>
+  <script src="../forumpages/forum.js"></script>
 </body>
 
 </html>

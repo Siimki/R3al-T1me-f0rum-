@@ -1,4 +1,6 @@
-export function addCommentForm() {
+
+export async function addCommentForm() {
+  console.log("beginning of addcomment")
   var appDiv = document.getElementById("app");
   // document.addEventListener("DOMContentLoaded", function () {
   // Create the main container div
@@ -48,13 +50,38 @@ export function addCommentForm() {
   const commentForm = document.createElement("form");
   commentForm.classList.add("bg-gray-300", "m-3");
   commentForm.method = "post";
-  commentForm.action = "/addcomment";
+//   try {
+//     const response = await fetch('/addcomment', {
+        
+//         method: 'POST',
+//         headers: {
+//             'Content-Type': 'application/json'
+//         }
+//     });
+
+//     if (!response.ok) {
+//         throw new Error('Network response was not ok');
+//     }
+
+//     var postID = await response.json();
+//     console.log(postID," this is the data");
+//     loadPage('login');
+// } catch (error) {
+//     console.error('There was an error fetching the login data', error);
+//     loadPage('registration ');
+// }
+//   console.log("this is postID")
+  // document.getElementById('')
+  // commentForm.action = `/submitcomment?id=${postID}`;
+  
+  const postID = commentForm.action.split("=")[1];
+  commentForm.action = `/submitcomment?id=${postID}`;
+
 
   const commentTextarea = document.createElement("textarea");
   commentTextarea.classList.add("bg-gray-100");
   commentTextarea.name = "comment";
   commentTextarea.placeholder = "Your comment";
-
   const submitCommentBtn = document.createElement("input");
   submitCommentBtn.classList.add(
     "bg-blue-300",
@@ -126,17 +153,41 @@ export function addCommentForm() {
 
   commentForm.addEventListener("submit", function (e) {
     e.preventDefault(); // Prevent the default form submission
-
+    console.log("calling submit button")
     // Get the post ID from the form's action attribute
-    const postID = commentForm.action.split("=")[1];
+    var postID = commentForm.action.split("=")[1];
+    console.log("this is postID", postID)
+    // Get the current URL
+    const currentUrl = window.location.href;
 
+    // Create a URL object to parse the URL
+    const url = new URL(currentUrl);
+
+    // Get the 'id' parameter from the URL
+    const postId = url.searchParams.get('id');
+
+    // Make sure postId is not null or empty before proceeding
+    if (!postId) {
+      console.error('Invalid post_id');
+      return;
+    }
+
+    // Remove the '#addcomment' part if it's present in postId
+    const postIdWithoutHash = postId.replace('#addcomment', '');
+
+    // Make sure postIdWithoutHash is not null or empty before proceeding
+    if (!postIdWithoutHash) {
+      console.error('Invalid post_id');
+      return;
+    }
+    console.log("this is postID", postIdWithoutHash)
     // Get the comment text from the textarea
     const commentText = commentTextarea.value;
 
     // Make an AJAX request to your Go server to add the comment
-    fetch("/addComment", {
+    fetch("/submitcomment", {
       method: "POST",
-      body: JSON.stringify({ postID: postID, comment: commentText }),
+      body: JSON.stringify({ postID: postIdWithoutHash, comment: commentText }),
       headers: {
         "Content-Type": "application/json",
       },
@@ -145,6 +196,9 @@ export function addCommentForm() {
         if (response.ok) {
           // Handle a successful response (e.g., show a success message)
           console.log("Comment added successfully!");
+          setTimeout(function () {
+            window.location.href = "http://localhost:8080/#login";
+          }, 800); // 2000 milliseconds (2 seconds)
         } else {
           // Handle an error response
           console.error("Error adding comment");

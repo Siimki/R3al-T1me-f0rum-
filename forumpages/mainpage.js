@@ -1,7 +1,3 @@
-// window.onload = async function () {
-       
-// }
-
 import { data, fetchDataFromServer, loginHandler} from './registration.js'
 import { displayComments } from '/static/displayComments.js';
 import { changeColor } from '/static/changeColor.js'; // Replace 'function1' with the actual function name
@@ -13,9 +9,11 @@ import { likesFunction } from '/static/likesFunction.js'; // Replace 'function3'
 export async function mainPage() {
     if (!data) {
         console.log("data not exist, start fetch")
-        data = fetchDataFromServer()
+         var data2 = await fetchDataFromServer();
     }
-    
+    if (!data) {
+      data = data2
+    }
     const body = document.getElementById('body');
     body.className = 'bg-gray-100';
   console.log("This is ducked")
@@ -260,6 +258,12 @@ console.log("do i arrive to the data.posts?")
 
         flexBox.appendChild(commentsToggleDiv);
 
+        // Attach an event listener to the comment button to update the hash
+        // commentsToggleButton.addEventListener('click', function() {
+        //   event.preventDefault(); // Prevent form submission
+        //   window.location.hash = `#post-comments-${post.ID}`; // Update the hash
+        // });
+
         // Append flexBox to the innerPostDiv or where you want it to appear
         innerPostDiv2.appendChild(flexBox);
         
@@ -325,8 +329,8 @@ console.log("do i arrive to the data.posts?")
             // i am not entirely sure where i put this line
         // innerPostDiv.appendChild(commentDiv)
             const addCommentForm = document.createElement('form')
-            addCommentForm.method = 'post'
-            addCommentForm.action = '/addcomment'
+            addCommentForm.method = 'get'
+            addCommentForm.action = '#addcomment'
             // const randomDiv = document.createElement('div')
             // randomDiv.className = 'flex justify-between'
                 const inputAddComment = document.createElement('input')
@@ -370,6 +374,74 @@ console.log("do i arrive to the data.posts?")
       appDiv.appendChild(postDiv);
   });
 
+//Sample data - replace this with dynamic data if needed
+
+const users = [
+  
+  { id: 1, username: 'Alice' },
+  { id: 2, username: 'Bob' },
+  { id: 3, username: 'Charlie' },
+  // Add more users as needed
+
+];
+
+console.log("das is username", data.Usernames, "das is usernames")
+
+// Function to create user list
+function createUserList() {
+
+  const userListContainer = document.getElementById('userList');
+
+  // Clear out current list
+  userListContainer.innerHTML = '';
+
+  // Create user list items
+  data.Usernames.forEach(user => {
+      const userItem = document.createElement('div');
+      userItem.classList.add('user-list-item');
+      userItem.id = 'chatboxToggle'
+      userItem.textContent = user;
+      userItem.onclick = () => initiateChat(user); // Replace with actual chat initiation logic
+      userListContainer.appendChild(userItem);
+  });
+
+}
+
+// Function to initiate chat with a user
+function initiateChat(nickname) {
+  console.log('Initiating chat with username:', nickname);
+  // Here you would open the chat window or switch to the chat view with the selected user
+  // This part depends on how your chat system is set up
+}
+
+  const toggleUserListBtn = document.getElementById('toggleUserListBtn');
+  const userList = document.getElementById('userList'); // Assuming this is the ID of your user list sidebar
+
+  // Event listener for the toggle button
+  toggleUserListBtn.addEventListener('click', () => {
+      // Check if the user list is currently visible
+      if (userList.style.display === 'none' || userList.style.display === '') {
+          userList.style.display = 'block'; // Show the user list
+          toggleUserListBtn.textContent = 'Hide User List';
+      } else {
+          userList.style.display = 'none'; // Hide the user list
+          toggleUserListBtn.textContent = 'Show User List';
+      }
+  });
+
+  // Initialize the user list display on page load
+  // userList.style.display = 'none'; // Start with the user list hidden
+  toggleUserListBtn.textContent = 'Show User List';
+
+  // Presumably, you would have a function like 'createUserList' that adds users to the sidebar
+   createUserList();
+
+
+// ... (Rest of the createUserList and initiateChat functions as previously provided) ...
+
+
+// Call createUserList on page load or when user data is updated
+// createUserList();
 
 
   // If no posts, display a message
@@ -382,7 +454,7 @@ console.log("do i arrive to the data.posts?")
     // Add scripts
 //   const script1 = document.createElement('script');
 //   script1.src = '/static/changeColor.js';
-const scriptArr = ["changeColor.js", "displayComments.js", "likesFunction.js", "commentsScript.js"]
+const scriptArr = ["chatBar.js","changeColor.js", "displayComments.js", "likesFunction.js", "commentsScript.js" ]
 scriptArr.forEach(script => {
   let script2 = document.createElement('script');
   script2.src = `../static/${script}`
@@ -398,6 +470,27 @@ scriptArr.forEach(script => {
 displayComments()
 commentsScript()
 likesFunction()
+
+    
+// document.getElementById('send-btn').addEventListener('click', function() {
+//     var messageBox = document.getElementById('message-input');
+//     var message = messageBox.value.trim();
+//     if(message) {
+//       addMessage(message);
+//       messageBox.value = '';
+//     }
+//   });
+  
+//   function addMessage(message) {
+//     var messagesContainer = document.getElementById('messages');
+//     var messageDiv = document.createElement('div');
+//     messageDiv.textContent = message;
+//     messageDiv.className = 'bg-blue-100 rounded-lg p-2';
+//     messagesContainer.appendChild(messageDiv);
+  
+//     // Scroll to the bottom of the message container
+//     messagesContainer.scrollTop = messagesContainer.scrollHeight;
+//   }
 
 
 }

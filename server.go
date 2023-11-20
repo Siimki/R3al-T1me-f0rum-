@@ -366,41 +366,59 @@ func admin(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 }
 
 func submitComment(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+	fmt.Println("SubmitComment got called")
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	err := r.ParseForm()
+  // Parse the request body as JSON
+	var requestBody struct {
+		PostID  string `json:"postID"`
+		Comment string `json:"comment"`
+	}
+	err := json.NewDecoder(r.Body).Decode(&requestBody)
 	if err != nil {
-		http.Error(w, "Error parsing form", http.StatusBadGateway)
+		http.Error(w, "Error parsing JSON", http.StatusBadRequest)
 		return
 	}
-	comment := r.FormValue("comment")
-	postID := r.FormValue("id")
 
-	if postID == "" {
-		http.Error(w, "missing post id", http.StatusBadRequest)
-		return
-	}
 
 	userSession, _ := helpers.ValidateSessionFromCookie(w, r)
+	if err != nil {
+        http.Error(w, "User not authenticated", http.StatusUnauthorized)
+        return
+    }
 	userID := helpers.SQLSelectUserID(db, userSession.Username)
+	 // Extract post ID and comment from the JSON request body
+	 postID := requestBody.PostID
+	 comment := requestBody.Comment
+	fmt.Printf("the comment inside submitComment is: %v \n", comment)
+	if postID == "" {
+        http.Error(w, "Missing post ID", http.StatusBadRequest)
+        fmt.Println("Post ID is missing, post ID is:", postID, "the comment is:", comment)
+        return
+    }
 
-	if comment == "" {
-		http.Error(w, "Creating empty comment is forbidden.", http.StatusBadRequest)
+    fmt.Printf("The comment inside submitComment is: %v\n", comment)
 
-	} else {
-		if err := helpers.SQLInsertComment(db, postID, comment, userID); err != nil {
-			http.Error(w, "Error inserting comment", http.StatusInternalServerError)
-		}
-	}
+    if comment == "" {
+        http.Error(w, "Creating empty comment is forbidden.", http.StatusBadRequest)
+    } else {
+        if err := helpers.SQLInsertComment(db, postID, comment, userID); err != nil {
+            http.Error(w, "Error inserting comment", http.StatusInternalServerError)
+            return
+        }
+    }
 
-	http.Redirect(w, r, "homepage.html", http.StatusSeeOther)
+    // Redirect to the appropriate page, e.g., assuming you have an "homepage.html" page
+    http.Redirect(w, r, "homepage.html", http.StatusSeeOther)
 }
 
 func addComment(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("addComment got called!")
+
 	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		http.Error(w, "Method not allowed: func addComment", http.StatusMethodNotAllowed)
 		return
 	}
 	err := r.ParseForm()
@@ -412,19 +430,23 @@ func addComment(w http.ResponseWriter, r *http.Request) {
 	postID := r.FormValue("id")
 	if postID == "" {
 		http.Error(w, "missing post id", http.StatusBadRequest)
+		fmt.Println( " err")
 		return
 	}
-	t, err := template.ParseFiles("templates/addcomment.html")
-	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
+	// t, err := template.ParseFiles("templates/addcomment.html")
+	// if err != nil {
+	// 	http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	// 	return
+	// }
 
-	err = t.Execute(w, postID)
-	if err != nil {
-		http.Error(w, "Error executing template", http.StatusInternalServerError)
-		return
-	}
+	// err = t.Execute(w, postID)
+	// if err != nil {
+	// 	http.Error(w, "Error executing template", http.StatusInternalServerError)
+	// 	return
+	// }
+
+	//incase we try to pass the postID 
+
 }
 
 func createPost(w http.ResponseWriter, r *http.Request, db *sql.DB) {
