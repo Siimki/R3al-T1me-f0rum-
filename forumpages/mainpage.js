@@ -388,19 +388,21 @@ const users = [
 console.log("das is username", data.Usernames, "das is usernames")
 
 // Function to create user list
+let currentChatUsername = null; 
 function createUserList() {
 
   const userListContainer = document.getElementById('userList');
 
   // Clear out current list
   userListContainer.innerHTML = '';
-
+  
   // Create user list items
   data.Usernames.forEach(user => {
       const userItem = document.createElement('div');
       userItem.classList.add('user-list-item');
-      userItem.id = 'chatboxToggle'
-      userItem.textContent = user;
+      userItem.classList.add('chatboxToggle')
+      userItem.textContent = user;  
+      currentChatUsername = user; 
       userItem.onclick = () => initiateChat(user); // Replace with actual chat initiation logic
       userListContainer.appendChild(userItem);
   });
@@ -409,6 +411,7 @@ function createUserList() {
 
 // Function to initiate chat with a user
 function initiateChat(nickname) {
+  currentChatUsername = nickname; // Store the current chat username
   console.log('Initiating chat with username:', nickname);
   // Here you would open the chat window or switch to the chat view with the selected user
   // This part depends on how your chat system is set up
@@ -429,6 +432,140 @@ function initiateChat(nickname) {
       }
   });
 
+  const chatboxToggle = document.querySelectorAll('.chatboxToggle');
+  const chatboxClose = document.querySelector('.chat-header .close'); // Make sure the selector is specific to the close button
+
+  
+  // Open chatbox
+  // chatboxToggle.addEventListener('click', () => {
+  //     console.log("i expand inside mainpage.js")
+  //     chatbox.classList.add('expanded');
+  // });
+
+//   chatboxToggle.forEach(element => {
+//     element.addEventListener('click', () => {
+//         // Toggle the chatbox expansion here
+//         console.log("do i get called?")
+//         // If you have a function to open a chat with a specific user, you could call it here
+//         // For example: openChat(element.textContent);
+//         chatbox.classList.toggle('expanded');
+//     });
+// });
+    // Close chatbox from the close button
+  //   chatboxClose.addEventListener('click', () => {
+  //     console.log("i remove")
+  //     chatbox.classList.remove('expanded');
+  // });
+
+  let socket;
+
+function setupWebSocket(username) {
+  socket = new WebSocket(`ws://localhost:8080/ws?username=${encodeURIComponent(username)}`);
+
+  socket.onopen = function(e) {
+    console.log("Connection established!");
+  };
+
+  socket.onmessage = function(event) {
+    const message = JSON.parse(event.data);
+    addMessageToChat(message); // Implement this function to add messages to the chat
+  };
+
+  socket.onclose = function(event) {
+    if (event.wasClean) {
+      console.log(`Connection closed cleanly, code=${event.code}, reason=${event.reason}`);
+    } else {
+      // e.g., server process killed or network down event.code is usually 1006 in this case
+      console.log('Connection died');
+    }
+  };
+
+  socket.onerror = function(error) {
+    console.error(`[error] ${error.message}`);
+  };
+}
+
+function sendMessage(message) {
+  if (socket.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify({ content: message }));
+  } else {
+    console.error("WebSocket is not connected.");
+  }
+}
+
+// When sending a message, call `sendMessage(message)`
+// When the user navigates to the chat, call `setupWebSocket(user)`
+  
+  document.getElementById('sendMessage').addEventListener('click', () => {
+    const messageInput = document.getElementById('messageInput');
+    const message = messageInput.value.trim();
+    console.log("This is message that is going to be sent to the server")
+    if (message) {
+      sendMessageToServer(message);
+      messageInput.value = ''; // Clear the input after sending
+    }
+  });
+  
+  function sendMessageToServer(message) {
+    // const users = document.querySelectorAll('.user-name');
+    // var receiverusername; 
+    // users.forEach(user => {
+    //   user.addEventListener('click', () => {
+    //     console.log("i know who you are messaging in sendMessageToServer")
+    //     receiverusername = user.getAttribute('data-username');
+    //     console.log("is it him", receiverusername)
+    //     openChat(username);
+    //   });
+    // });
+
+    var senderusername = data.Username;
+    var receiverusername = currentChatUsername; 
+  //  var receiverusername = 2
+    // Perform AJAX request to send message to server
+    console.log("The message we send to the server:", message)
+    console.log("this is the receiver:", receiverusername)
+    fetch('/send-message', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ message, senderusername, receiverusername })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        console.log('Message sent successfully');
+      }
+    })
+    .catch(error => console.error('Error sending message:', error));
+  }
+  
+  function getMessagesFromServer() {
+    const username = "Reciever user?";
+    fetch(`/get-messages?username=${encodeURIComponent(username)}`)
+    .then(response => response.json())
+    .then(messages => {
+      displayMessages(messages);
+    })
+    .catch(error => console.error('Error retrieving messages:', error));
+  }
+  
+  function displayMessages(messages) {
+    const messagesContainer = document.getElementById('messages');
+    messagesContainer.innerHTML = ''; // Clear previous messages
+    messages.forEach(message => {
+      const messageDiv = document.createElement('div');
+      messageDiv.textContent = message.content;
+      messagesContainer.appendChild(messageDiv);
+    });
+  }
+
+ 
+  setInterval(() => {
+    console.log(" call me get messageFrom server")
+    //getMessagesFromServer() 
+  }, 2000);
+  
   // Initialize the user list display on page load
   // userList.style.display = 'none'; // Start with the user list hidden
   toggleUserListBtn.textContent = 'Show User List';
