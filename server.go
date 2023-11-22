@@ -12,9 +12,16 @@ import (
 	"strconv"
 	"text/template"
 	"time"
-
+	"github.com/gorilla/websocket"
 	_ "github.com/mattn/go-sqlite3"
 )
+
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool {
+	  return true // Adjust the origin checking to your requirements for production
+	},
+  }
+  
 
 type Post struct {
 	ID           int
@@ -54,6 +61,18 @@ type Vote struct {
 	Username string `json:"username"`
 }
 
+var clients = make(map[string]*websocket.Conn)
+
+
+// type Message struct {
+//     ID         int
+//     SenderID   int
+//     ReceiverID int
+//     Content    string
+//     CreatedAt  time.Time
+//     // Add other fields if necessary
+// }
+
 func main() {
 
 	db, err := helpers.GetDbConnection()
@@ -87,11 +106,145 @@ func main() {
 	http.HandleFunc("/homepage", func(w http.ResponseWriter, r *http.Request) { homePageHandler(w, r, db) })
 	http.HandleFunc("/logout", logOutHandler)
 	http.HandleFunc("/createpost", serveCreatePostPage)
+	http.HandleFunc("/ws", handleWebSocket)
+	http.HandleFunc("/send-message", func(w http.ResponseWriter, r *http.Request){messageHandler(w,r,db)})
+	http.HandleFunc("/get-message", func(w http.ResponseWriter, r *http.Request){getMessageHandler(w,r,db)})
 	http.HandleFunc("/", homeHandler)
 
 	fmt.Println("Server started on port 8080.")
 	fmt.Println("http://localhost:8080/")
 	http.ListenAndServe(":8080", nil)
+}
+
+func handleWebSocket(w http.ResponseWriter, r *http.Request) {
+    conn, err := upgrader.Upgrade(w, r, nil)
+    if err != nil {
+        log.Println(err)
+        return
+    }
+    defer conn.Close()
+
+    username := r.URL.Query().Get("username")
+    // Register the client
+    clients[username] = conn
+
+    // You can now use the conn.WriteMessage to send messages back to the user
+    // ...
+
+    for { 
+        _, message, err := conn.ReadMessage()
+        if err != nil {
+            log.Println("read:", err)
+            delete(clients, username) // Remove the client on disconnect
+            break
+        }
+        // Process the incoming message
+        // This is where you can call your messageHandler logic
+        processMessage(username, message)
+    }
+}
+
+func processMessage(username string, message []byte) {
+    // Unmarshal the JSON message
+    var msg struct {
+        Content string `json:"content"`
+		ReceiverUsername string `json:"receiverusername"`
+        // Add other relevant fields
+    }
+    err := json.Unmarshal(message, &msg)
+    if err != nil {
+        log.Println("error unmarshaling message:", err)
+        return
+    }
+
+    // Store the message in the database and send it to the receiver
+    // You can use the `clients` map to get the receiver's WebSocket connection
+    // For example, if you have the receiver's username:
+    receiverConn := clients[msg.ReceiverUsername]
+    if receiverConn != nil {
+        // Send the message to the receiver
+        receiverConn.WriteMessage(websocket.TextMessage, message)
+    }
+
+    // You can also store the message in your database as before
+}
+
+func getMessageHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+	username := r.URL.Query().Get("username")
+
+	// Declare your Message struct
+	type Message struct {
+	    Content string `json:"content"`
+	    // Add other fields if necessary
+	}
+
+	// Here you would retrieve messages from your database
+	userId, err := helpers.GetUserID(username)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	
+	var messages []Message
+	rows, err := db.Query("SELECT content FROM private_messages WHERE receiver_id = ?", userId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	} 
+	defer rows.Close()
+	
+	for rows.Next() {
+		var msg Message
+		if err := rows.Scan(&msg.Content); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		messages = append(messages, msg)
+	}
+
+	// Check for errors from iterating over rows
+	if err := rows.Err(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+  
+	// Set content type to application/json
+    w.Header().Set("Content-Type", "application/json")
+    // Encode messages to JSON and send the response
+    json.NewEncoder(w).Encode(messages)
+}
+
+func messageHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+	var msg struct {
+		Message  string `json:"message"`
+		SenderUsername string `json:"senderusername"`
+		Receiverusername string `json:"receiverusername"`
+		Id int `json:"Id"`
+	  }
+	  err := json.NewDecoder(r.Body).Decode(&msg)
+	  fmt.Println("this is msg", msg.Message, "this is user that sent messsage:", msg.SenderUsername, "and receiver",msg.Receiverusername)
+	  if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	  }
+	
+	  // Here you would insert the message into your database
+	  // db.Query("INSERT INTO messages (content, username) VALUES (?, ?)", msg.Message, msg.Username)
+	  senderUserId, err := helpers.GetUserID(msg.SenderUsername)
+	  if err != nil {
+		fmt.Println(err)
+	  }
+	  receiverUserId, err := helpers.GetUserID(msg.Receiverusername)
+	  if err != nil {
+		fmt.Println(err)
+	  }
+	  _, err = db.Exec("INSERT INTO private_messages (content, sender_id, receiver_id) VALUES (?, ?, ?)", msg.Message, senderUserId, receiverUserId )
+	  if err != nil {
+		fmt.Println(err)
+		return
+	  } 
+	  // Respond back to the client
+	  json.NewEncoder(w).Encode(map[string]bool{"success": true})
 }
 
 func handleGithubLogin(w http.ResponseWriter, r *http.Request) {

@@ -139,7 +139,7 @@ func InitalizeDb(username string, password string, email string, role string, ap
 	return nil
 }
 
-func getUserID(username string) (int, error) {
+func GetUserID(username string) (int, error) {
 	db, err := GetDbConnection()
 	if err != nil {
 		return 0, fmt.Errorf("failed to get DB connection: %w", err)

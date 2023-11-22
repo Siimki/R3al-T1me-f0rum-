@@ -56,6 +56,9 @@ export async function mainPage() {
   // Assuming 'appDiv' is the parent element where you want to append your forms
 // and 'buttonDiv' is the div where all buttons will be placed.
 
+//toggleUserListBtn
+const toggleUserListButton = document.getElementById('toggleUserListBtn')
+toggleUserListButton.style.display = 'block'
 // My Posts form and button
 const myPostsForm = document.createElement('form');
 myPostsForm.action = '/myposts';
@@ -388,6 +391,7 @@ const users = [
 console.log("das is username", data.Usernames, "das is usernames")
 
 // Function to create user list
+
 let currentChatUsername = null; 
 function createUserList() {
 
@@ -419,7 +423,7 @@ function initiateChat(nickname) {
 
   const toggleUserListBtn = document.getElementById('toggleUserListBtn');
   const userList = document.getElementById('userList'); // Assuming this is the ID of your user list sidebar
-
+  
   // Event listener for the toggle button
   toggleUserListBtn.addEventListener('click', () => {
       // Check if the user list is currently visible
