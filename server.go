@@ -921,7 +921,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		fmt.Println("Login handler got called with correct password")
 	} else {
 		fmt.Println("Login handler got called with wrong password")
-
+		
 		http.Redirect(w, r, "/registration.html?error=Invalid username or password!", http.StatusSeeOther)
 	}
 }
