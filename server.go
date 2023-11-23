@@ -170,48 +170,34 @@ func processMessage(username string, message []byte) {
 }
 
 func getMessageHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
-	username := r.URL.Query().Get("username")
+	//username := r.URL.Query().Get("username")
+	fmt.Println("getMessageHandler got called!")
+	senderUsername := r.URL.Query().Get("senderusername")
+	receiverUsername := r.URL.Query().Get("receiverusername")
 
-	// Declare your Message struct
+	// Declare your Message struct with all necessary fields
 	type Message struct {
-	    Content string `json:"content"`
-	    // Add other fields if necessary
+		Sender    string `json:"sender"`
+		Receiver  string `json:"receiver"`
+		Content   string `json:"content"`
+		//Timestamp string `json:"timestamp"`
 	}
 
-	// Here you would retrieve messages from your database
-	userId, err := helpers.GetUserID(username)
+	// Mock function to get private messages from the database
+	// Replace this with your actual database call
+	privateMessages, err := helpers.GetPrivateMessages(db, senderUsername, receiverUsername)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	
-	var messages []Message
-	rows, err := db.Query("SELECT content FROM private_messages WHERE receiver_id = ?", userId)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	} 
-	defer rows.Close()
-	
-	for rows.Next() {
-		var msg Message
-		if err := rows.Scan(&msg.Content); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		messages = append(messages, msg)
-	}
-
-	// Check for errors from iterating over rows
-	if err := rows.Err(); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-  
+	fmt.Println("this is privateMessages in getMessageHandler", privateMessages)
 	// Set content type to application/json
-    w.Header().Set("Content-Type", "application/json")
-    // Encode messages to JSON and send the response
-    json.NewEncoder(w).Encode(messages)
+	w.Header().Set("Content-Type", "application/json")
+
+	// Encode messages to JSON and send the response
+	if err := json.NewEncoder(w).Encode(privateMessages); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func messageHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {

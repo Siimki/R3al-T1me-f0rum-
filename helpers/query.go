@@ -11,7 +11,42 @@ import (
 	"log"
 )
 
-func GetUsernames(db *sql.DB) ( usernames []string, err error) {
+func GetPrivateMessages(db *sql.DB, senderUsername string, readerUsername string) (privateMessages []string, err error) {
+	var rows *sql.Rows
+	fmt.Println("sender and reciever inside GetPrivateMessages is: ", senderUsername, "\n",readerUsername)
+	fmt.Println("Call inside GetPrivateMessages")
+	rows, err = db.Query(`SELECT content FROM private_messages WHERE sender_id = ? AND receiver_id = ?;`, 1, 2)
+		if err != nil {
+			fmt.Println(err)
+			return nil , fmt.Errorf("Failed to execute query: %v", err)
+		}
+		if rows != nil {
+			defer rows.Close()
+	
+			var privateMessages []string
+			for rows.Next() {
+				var privateMessage string
+				if err := rows.Scan(&privateMessage); err != nil {
+					fmt.Println(err)
+
+					return nil , fmt.Errorf("Failed to scan row: %v", err)
+				}
+				privateMessages = append(privateMessages, privateMessage)
+			}
+	
+			if err := rows.Err(); err != nil {
+				fmt.Println(err)
+
+				return nil , fmt.Errorf("Failed after iterating rows: %v", err)
+			}
+			fmt.Println("This is private Messages:\n", privateMessages)
+			return privateMessages, nil
+		}	
+	fmt.Println("GetPrivateMessages: I should not arrive here?")
+	return privateMessages, nil 
+}
+
+func GetUsernames(db *sql.DB) (usernames []string, err error) {
 	var rows *sql.Rows
 	rows, err = db.Query("SELECT username FROM users;")
 		if err != nil {

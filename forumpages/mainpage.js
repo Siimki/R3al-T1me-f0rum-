@@ -544,14 +544,39 @@ function sendMessage(message) {
     .catch(error => console.error('Error sending message:', error));
   }
   
-  function getMessagesFromServer() {
-    const username = "Reciever user?";
-    fetch(`/get-messages?username=${encodeURIComponent(username)}`)
-    .then(response => response.json())
-    .then(messages => {
-      displayMessages(messages);
-    })
-    .catch(error => console.error('Error retrieving messages:', error));
+  async function getMessagesFromServer() {
+    const senderusername = data.Username;
+    const receiverusername = "Kersti";
+    
+    const url = `/get-message?senderusername=${encodeURIComponent(senderusername)}&receiverusername=${encodeURIComponent(receiverusername)}`
+
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+  
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+  
+      const privateMessages = await response.json();
+      console.log(privateMessages, ": this is privateMessages");
+      // Now you can call a function to display these messages in the chat window
+      // displayMessages(privateMessages);
+    } catch (error) {
+      console.error('There was an error fetching messages from the server:', error);
+    }
+
+    // fetch(`/get-messages?username=${encodeURIComponent(senderusername)}`)
+    // .then(response => response.json())
+    // .then(messages => {
+    //   console.log("this is messages content inside the getMessagesFromServer")
+    //   displayMessages(messages);
+    // })
+    // .catch(error => console.error('Error retrieving messages:', error));
   }
   
   function displayMessages(messages) {
@@ -564,11 +589,14 @@ function sendMessage(message) {
     });
   }
 
+  //get message from server when i click on the user i want to chat with.
+  //Display message between me loggedInUser and the user i clicked on. 
+
  
   setInterval(() => {
     console.log(" call me get messageFrom server")
-    //getMessagesFromServer() 
-  }, 2000);
+    getMessagesFromServer() 
+  }, 3000);
   
   // Initialize the user list display on page load
   // userList.style.display = 'none'; // Start with the user list hidden
