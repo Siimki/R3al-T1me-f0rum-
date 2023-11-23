@@ -11,11 +11,27 @@ import (
 	"log"
 )
 
-func GetPrivateMessages(db *sql.DB, senderUsername string, readerUsername string) (privateMessages []string, err error) {
+type PrivateMessage struct {
+	Sender    string `json:"sender"`
+	Receiver  string `json:"receiver"`
+	Content   string `json:"content"`
+	Timestamp string `json:"timestamp"`
+}
+func GetPrivateMessages(db *sql.DB, senderUsername string, readerUsername string) (privateMessages []PrivateMessage, err error) {
 	var rows *sql.Rows
 	fmt.Println("sender and reciever inside GetPrivateMessages is: ", senderUsername, "\n",readerUsername)
 	fmt.Println("Call inside GetPrivateMessages")
-	rows, err = db.Query(`SELECT content FROM private_messages WHERE sender_id = ? AND receiver_id = ?;`, 1, 2)
+
+	senderUserID,err  := GetUserID(senderUsername)
+	if err != nil {
+		fmt.Println(err)
+	}
+	readerUserID, err := GetUserID(readerUsername)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println("Need on: ", senderUserID, readerUserID)
+	rows, err = db.Query(`SELECT sender_id, receiver_id, content, created_at FROM private_messages WHERE (sender_id = ? AND receiver_id = ?)OR (sender_id = ? AND receiver_id = ?) ORDER BY created_at;`, senderUserID, readerUserID, readerUserID, senderUserID)
 		if err != nil {
 			fmt.Println(err)
 			return nil , fmt.Errorf("Failed to execute query: %v", err)
@@ -23,15 +39,13 @@ func GetPrivateMessages(db *sql.DB, senderUsername string, readerUsername string
 		if rows != nil {
 			defer rows.Close()
 	
-			var privateMessages []string
+			var privateMessages []PrivateMessage
 			for rows.Next() {
-				var privateMessage string
-				if err := rows.Scan(&privateMessage); err != nil {
+				var msg PrivateMessage
+				if err := rows.Scan(&msg.Sender, &msg.Receiver, &msg.Content, &msg.Timestamp); err != nil {
 					fmt.Println(err)
-
-					return nil , fmt.Errorf("Failed to scan row: %v", err)
 				}
-				privateMessages = append(privateMessages, privateMessage)
+				privateMessages = append(privateMessages, msg)
 			}
 	
 			if err := rows.Err(); err != nil {

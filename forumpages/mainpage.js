@@ -546,7 +546,7 @@ function sendMessage(message) {
   
   async function getMessagesFromServer() {
     const senderusername = data.Username;
-    const receiverusername = "Kersti";
+    const receiverusername = currentChatUsername;
     
     const url = `/get-message?senderusername=${encodeURIComponent(senderusername)}&receiverusername=${encodeURIComponent(receiverusername)}`
 
