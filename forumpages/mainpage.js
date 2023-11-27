@@ -565,7 +565,7 @@ function sendMessage(message) {
       const privateMessages = await response.json();
       console.log(privateMessages, ": this is privateMessages");
       // Now you can call a function to display these messages in the chat window
-      // displayMessages(privateMessages);
+      displayMessages(privateMessages);
     } catch (error) {
       console.error('There was an error fetching messages from the server:', error);
     }

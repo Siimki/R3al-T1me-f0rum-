@@ -21,7 +21,7 @@ func GetPrivateMessages(db *sql.DB, senderUsername string, readerUsername string
 	var rows *sql.Rows
 	fmt.Println("sender and reciever inside GetPrivateMessages is: ", senderUsername, "\n",readerUsername)
 	fmt.Println("Call inside GetPrivateMessages")
-
+	
 	senderUserID,err  := GetUserID(senderUsername)
 	if err != nil {
 		fmt.Println(err)
