@@ -17,10 +17,9 @@ import (
 )
 
 var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool {
-	  return true // Adjust the origin checking to your requirements for production
-	},
-  }
+    ReadBufferSize:  1024,
+    WriteBufferSize: 1024,
+}
   
 
 type Post struct {
@@ -43,6 +42,7 @@ type HomePageData struct {
 	ModerationRequests []string
 	Moderators         []string
 	ReportedRequests   int
+	UsernameId 		   int
 }
 
 type Comment struct {
@@ -106,7 +106,7 @@ func main() {
 	http.HandleFunc("/homepage", func(w http.ResponseWriter, r *http.Request) { homePageHandler(w, r, db) })
 	http.HandleFunc("/logout", logOutHandler)
 	http.HandleFunc("/createpost", serveCreatePostPage)
-	http.HandleFunc("/ws", handleWebSocket)
+	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request){handleWebSocket(w,r,db)})
 	http.HandleFunc("/send-message", func(w http.ResponseWriter, r *http.Request){messageHandler(w,r,db)})
 	http.HandleFunc("/get-message", func(w http.ResponseWriter, r *http.Request){getMessageHandler(w,r,db)})
 	http.HandleFunc("/", homeHandler)
@@ -116,91 +116,146 @@ func main() {
 	http.ListenAndServe(":8080", nil)
 }
 
-func handleWebSocket(w http.ResponseWriter, r *http.Request) {
-    conn, err := upgrader.Upgrade(w, r, nil)
-    if err != nil {
-        log.Println(err)
-        return
-    }
-    defer conn.Close()
+func handleWebSocket(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
+	fmt.Println("Websocket got called")
+	ws, err := upgrader.Upgrade(w,r, nil )
+	if err != nil {
+		log.Fatal()
+	}
+	defer ws.Close()
 
-    username := r.URL.Query().Get("username")
-    // Register the client
-    clients[username] = conn
+	username := r.URL.Query().Get("username")
+	limit := r.URL.Query().Get("limit")
+	offset := r.URL.Query().Get("offset")
+	fmt.Println("this is username, limit and offset from URL", username, limit, offset)
+	clients[username] = ws 
+	strLimit, err := strconv.Atoi(limit)
+	if err != nil {
+		fmt.Println("str conversion fucked ")
+	}
+	offsetLimit, err := strconv.Atoi(offset)
+	if err != nil {
+		fmt.Println("Str conversion fucked v2")
+	}
 
-    // You can now use the conn.WriteMessage to send messages back to the user
-    // ...
 
-    for { 
-        _, message, err := conn.ReadMessage()
-        if err != nil {
-            log.Println("read:", err)
-            delete(clients, username) // Remove the client on disconnect
-            break
-        }
-        // Process the incoming message
-        // This is where you can call your messageHandler logic
-        processMessage(username, message)
-    }
+	for { 
+
+		var msg struct {
+			Message          string `json:"message"`
+			SenderUsername   string `json:"senderusername"`
+			ReceiverUsername string `json:"receiverusername"`
+			Status 			 string `json:"status"`
+		}
+
+		if err := ws.ReadJSON(&msg); err != nil {
+			log.Println("read:", err)
+			delete(clients, username)
+			return
+		}
+
+		if err := liteMesssageHandler(msg.Message, msg.SenderUsername, msg.ReceiverUsername, db); err != nil {
+			log.Println("Store message:", err) 
+			continue
+		}
+
+		if senderWs, ok := clients[msg.SenderUsername]; ok {
+	
+			privateMessages, err := helpers.GetPrivateMessages(db, msg.SenderUsername, msg.ReceiverUsername, strLimit, offsetLimit)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			if err := senderWs.WriteJSON(privateMessages); err != nil {
+				log.Println("write confirmation error:", err )
+				//handle errror
+			}
+		}
+
+		if receiverWs, ok := clients[msg.ReceiverUsername]; ok {
+			if err := receiverWs.WriteJSON(msg); err != nil {
+				log.Println("Write error:", err)
+				//handle error
+			}
+		}
+	}
+	
 }
 
-func processMessage(username string, message []byte) {
-    // Unmarshal the JSON message
-    var msg struct {
-        Content string `json:"content"`
-		ReceiverUsername string `json:"receiverusername"`
-        // Add other relevant fields
-    }
-    err := json.Unmarshal(message, &msg)
-    if err != nil {
-        log.Println("error unmarshaling message:", err)
-        return
-    }
+func liteMesssageHandler(msg string, senderName string, receiver string, db *sql.DB) (err error ) {
+	fmt.Println("log litemessagehandler")
 
-    // Store the message in the database and send it to the receiver
-    // You can use the `clients` map to get the receiver's WebSocket connection
-    // For example, if you have the receiver's username:
-    receiverConn := clients[msg.ReceiverUsername]
-    if receiverConn != nil {
-        // Send the message to the receiver
-        receiverConn.WriteMessage(websocket.TextMessage, message)
-    }
+	  senderUserId, err := helpers.GetUserID(senderName)
+	  if err != nil {
+		fmt.Println(err)
+	  }
+	  receiverUserId, err := helpers.GetUserID(receiver)
+	  if err != nil {
+		fmt.Println(err)
+	  }
+	  log.Printf("Message from %s to %s: %s", senderName, receiver, msg)
 
-    // You can also store the message in your database as before
+	  _, err = db.Exec("INSERT INTO private_messages (content, sender_id, receiver_id) VALUES (?, ?, ?)", msg, senderUserId, receiverUserId )
+	  if err != nil {
+		fmt.Println(err)
+		return
+	  } 
+	 
+	return err
 }
 
 func getMessageHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
-	//username := r.URL.Query().Get("username")
-	fmt.Println("getMessageHandler got called!")
-	senderUsername := r.URL.Query().Get("senderusername")
-	receiverUsername := r.URL.Query().Get("receiverusername")
+    // Parse query parameters
+    senderUsername := r.URL.Query().Get("senderusername")
+    receiverUsername := r.URL.Query().Get("receiverusername")
+    // limitStr := r.URL.Query().Get("limit")
+    // offsetStr := r.URL.Query().Get("offset")
 
-	// Declare your Message struct with all necessary fields
-	type Message struct {
-		Sender    string `json:"sender"`
-		Receiver  string `json:"receiver"`
-		Content   string `json:"content"`
-		//Timestamp string `json:"timestamp"`
-	}
+    // Convert limit and offset to integers
+	pageStr := r.URL.Query().Get("page")
+    page, err := strconv.Atoi(pageStr)
+    if err != nil {
+        // handle error
+    }
 
-	// Mock function to get private messages from the database
-	// Replace this with your actual database call
-	privateMessages, err := helpers.GetPrivateMessages(db, senderUsername, receiverUsername)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	fmt.Println("this is privateMessages in getMessageHandler", privateMessages)
-	// Set content type to application/json
-	w.Header().Set("Content-Type", "application/json")
+    const limit = 10
+    offset := (page - 1) * limit
 
-	// Encode messages to JSON and send the response
-	if err := json.NewEncoder(w).Encode(privateMessages); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+    // offset, err = strconv.Atoi(offsetStr)
+    // if err != nil {
+    //     fmt.Println("Error converting offset:", err)
+    //     http.Error(w, "Invalid offset", http.StatusBadRequest)
+    //     return
+    // }
+
+    // Fetch messages
+    privateMessages, err := helpers.GetPrivateMessages(db, senderUsername, receiverUsername, limit, offset)
+    if err != nil {
+        fmt.Println("Error fetching messages:", err)
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+
+    // Handle case when no messages are found
+    if len(privateMessages) == 0 {
+        fmt.Println("No messages found")
+        w.Write([]byte("[]")) // Send empty JSON array
+        return
+    }
+
+    // Send messages as JSON
+    w.Header().Set("Content-Type", "application/json")
+    if err := json.NewEncoder(w).Encode(privateMessages); err != nil {
+        fmt.Println("Error encoding messages:", err)
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+    }
 }
 
+
 func messageHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+	fmt.Println("do i get called")
 	var msg struct {
 		Message  string `json:"message"`
 		SenderUsername string `json:"senderusername"`
@@ -727,7 +782,10 @@ func homePageHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		fmt.Println("This is usersession in homepagehandler \n", userSession)
 		fmt.Println("This is error", err)
 	}
-
+	usernameId, err := helpers.GetUserID(username)
+	if err != nil {
+		fmt.Println(err)
+	}
 	// admin pw is Admin123
 
 	data := HomePageData{
@@ -737,6 +795,7 @@ func homePageHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		Role:               role,
 		ModerationRequests: moderationRequests,
 		ReportedRequests:   count,
+		UsernameId:         usernameId,
 	}
 
 	fmt.Println("HomepageHandler got called!")

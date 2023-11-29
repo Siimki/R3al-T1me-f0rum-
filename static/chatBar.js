@@ -3,13 +3,7 @@
     const chatboxToggle = document.querySelectorAll('.chatboxToggle');
     const chatboxClose = document.querySelector('.chat-header .close'); // Make sure the selector is specific to the close button
     
-    // Open chatbox
-    // chatboxToggle.addEventListener('click', () => {
-    //     console.log("i expand ")
-    //     chatbox.classList.add('expanded');
-    // });
     
-    // Close chatbox from the close button
     chatboxClose.addEventListener('click', () => {
         console.log("i remove")
         chatbox.classList.remove('expanded');
@@ -26,14 +20,7 @@
         
       });
   });
-    // Clicking outside the chatbox closes it if it is open
-    // document.addEventListener('click', (event) => {
-    //     console.log('i outside of chatbox')
-    //     if (chatbox.classList.contains('expanded') && !chatbox.contains(event.target) && !event.target.matches('#chatboxToggle')) {
-    //         chatbox.classList.remove('expanded');
-    //     }
-    // });
-    
+
     // Stop propagation inside chatbox
     chatbox.addEventListener('click', (event) => {
         event.stopPropagation();
@@ -48,6 +35,7 @@
       const chatHeaderUsername = document.getElementById('chat-header-username'); // Make sure you have this element in your HTML
       chatHeaderUsername.textContent = `Chat with ${username}`;
       chatBox.classList.add('expanded');
+      // GetMessagesFromServer() 
       // Load message history and establish connection for real-time messaging
       // This will likely involve an AJAX call to your backend or establishing a WebSocket connection
     }

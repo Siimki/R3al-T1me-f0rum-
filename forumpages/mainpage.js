@@ -261,12 +261,6 @@ console.log("do i arrive to the data.posts?")
 
         flexBox.appendChild(commentsToggleDiv);
 
-        // Attach an event listener to the comment button to update the hash
-        // commentsToggleButton.addEventListener('click', function() {
-        //   event.preventDefault(); // Prevent form submission
-        //   window.location.hash = `#post-comments-${post.ID}`; // Update the hash
-        // });
-
         // Append flexBox to the innerPostDiv or where you want it to appear
         innerPostDiv2.appendChild(flexBox);
         
@@ -369,7 +363,7 @@ console.log("do i arrive to the data.posts?")
         
       // Populate postDiv with post data
       // ... similar logic as above, create elements and append them ...
-   // Append the innerPostDiv to the postDiv
+      // Append the innerPostDiv to the postDiv
         postDiv.appendChild(innerPostDiv);
 
         // Append the postDiv to the appDiv
@@ -379,15 +373,6 @@ console.log("do i arrive to the data.posts?")
 
 //Sample data - replace this with dynamic data if needed
 
-const users = [
-  
-  { id: 1, username: 'Alice' },
-  { id: 2, username: 'Bob' },
-  { id: 3, username: 'Charlie' },
-  // Add more users as needed
-
-];
-
 console.log("das is username", data.Usernames, "das is usernames")
 
 // Function to create user list
@@ -395,8 +380,7 @@ console.log("das is username", data.Usernames, "das is usernames")
 let currentChatUsername = null; 
 function createUserList() {
 
-  const userListContainer = document.getElementById('userList');
-
+  const userListContainer = document.getElementById('userList')
   // Clear out current list
   userListContainer.innerHTML = '';
   
@@ -415,12 +399,14 @@ function createUserList() {
 
 // Function to initiate chat with a user
 function initiateChat(nickname) {
-  currentChatUsername = nickname; // Store the current chat username
+  currentChatUsername = nickname;
   console.log('Initiating chat with username:', nickname);
-  // Here you would open the chat window or switch to the chat view with the selected user
-  // This part depends on how your chat system is set up
+  setupWebSocket(data.Username);
+  // Call with 1 to load the first page of messages
+  getMessagesFromServer(1);
+  currentPage = 1;
+  allMessagesLoaded = false;
 }
-
   const toggleUserListBtn = document.getElementById('toggleUserListBtn');
   const userList = document.getElementById('userList'); // Assuming this is the ID of your user list sidebar
   
@@ -438,64 +424,40 @@ function initiateChat(nickname) {
 
   const chatboxToggle = document.querySelectorAll('.chatboxToggle');
   const chatboxClose = document.querySelector('.chat-header .close'); // Make sure the selector is specific to the close button
-
   
-  // Open chatbox
-  // chatboxToggle.addEventListener('click', () => {
-  //     console.log("i expand inside mainpage.js")
-  //     chatbox.classList.add('expanded');
-  // });
+ // Establish a WebSocket connection when the user navigates to the chat
+  let socket = null;
+  function setupWebSocket(username) {
+    socket = new WebSocket(`ws://localhost:8080/ws?username=${username}`);
 
-//   chatboxToggle.forEach(element => {
-//     element.addEventListener('click', () => {
-//         // Toggle the chatbox expansion here
-//         console.log("do i get called?")
-//         // If you have a function to open a chat with a specific user, you could call it here
-//         // For example: openChat(element.textContent);
-//         chatbox.classList.toggle('expanded');
-//     });
-// });
-    // Close chatbox from the close button
-  //   chatboxClose.addEventListener('click', () => {
-  //     console.log("i remove")
-  //     chatbox.classList.remove('expanded');
-  // });
+    socket.onopen = function(e) {
+      console.log("[open] Connection established");
+    };
 
-  let socket;
+    socket.onmessage = function(event) {
+      console.log(`[message] Data received from server: ${event.data}`);
+      try {
+        const messageData = JSON.parse(event.data);
+        // Assuming messageData contains a single message object
+        displayMessages([messageData]); // Add the new message to the chat
+      } catch (e) {
+        console.error('Error parsing JSON:', e);
+      }
+    };
+    
 
-function setupWebSocket(username) {
-  socket = new WebSocket(`ws://localhost:8080/ws?username=${encodeURIComponent(username)}`);
+    socket.onclose = function(event) {
+      if (event.wasClean) {
+        console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+      } else {
+        console.log('[close] Connection died');
+      }
+    };
 
-  socket.onopen = function(e) {
-    console.log("Connection established!");
-  };
-
-  socket.onmessage = function(event) {
-    const message = JSON.parse(event.data);
-    addMessageToChat(message); // Implement this function to add messages to the chat
-  };
-
-  socket.onclose = function(event) {
-    if (event.wasClean) {
-      console.log(`Connection closed cleanly, code=${event.code}, reason=${event.reason}`);
-    } else {
-      // e.g., server process killed or network down event.code is usually 1006 in this case
-      console.log('Connection died');
-    }
-  };
-
-  socket.onerror = function(error) {
-    console.error(`[error] ${error.message}`);
-  };
-}
-
-function sendMessage(message) {
-  if (socket.readyState === WebSocket.OPEN) {
-    socket.send(JSON.stringify({ content: message }));
-  } else {
-    console.error("WebSocket is not connected.");
+    socket.onerror = function(error) {
+      console.log(`[error] ${error.message}`);
+    };
   }
-}
 
 // When sending a message, call `sendMessage(message)`
 // When the user navigates to the chat, call `setupWebSocket(user)`
@@ -503,53 +465,82 @@ function sendMessage(message) {
   document.getElementById('sendMessage').addEventListener('click', () => {
     const messageInput = document.getElementById('messageInput');
     const message = messageInput.value.trim();
-    console.log("This is message that is going to be sent to the server")
+    console.log("This is message that is going to be sent to the server", message)
     if (message) {
       sendMessageToServer(message);
       messageInput.value = ''; // Clear the input after sending
     }
   });
   
-  function sendMessageToServer(message) {
-    // const users = document.querySelectorAll('.user-name');
-    // var receiverusername; 
-    // users.forEach(user => {
-    //   user.addEventListener('click', () => {
-    //     console.log("i know who you are messaging in sendMessageToServer")
-    //     receiverusername = user.getAttribute('data-username');
-    //     console.log("is it him", receiverusername)
-    //     openChat(username);
-    //   });
-    // });
 
+
+  function sendMessageToServer(message) {
     var senderusername = data.Username;
     var receiverusername = currentChatUsername; 
-  //  var receiverusername = 2
-    // Perform AJAX request to send message to server
-    console.log("The message we send to the server:", message)
-    console.log("this is the receiver:", receiverusername)
-    fetch('/send-message', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ message, senderusername, receiverusername })
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        console.log('Message sent successfully');
+    console.log("The message we send to the server:", message);
+    
+    // Here we send the message through the WebSocket instead of using fetch
+    if (socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({ message, senderusername, receiverusername }));
+    } else {
+      console.error('WebSocket is not open. Cannot send message.');
+    }
+  }
+
+  
+  
+  
+  function displayMessages(messages, append = false) {
+    const messagesContainer = document.getElementById('messages');
+    if (!append) {
+      // Clear previous messages only if 'append' is false
+      messagesContainer.innerHTML = '';
+    }    const shouldScrollToBottom = messagesContainer.scrollTop + messagesContainer.clientHeight === messagesContainer.scrollHeight;
+
+    messages.forEach(message => {
+      const messageWrapper = document.createElement('div');
+      console.log(typeof(message.sender), "And: ", typeof(data.UsernameId))
+
+      messageWrapper.classList.add('message-wrapper', message.sender === data.UsernameId.toString() ? 'right' : 'left');
+  
+      const timestampDiv = document.createElement('div');
+      timestampDiv.classList.add('message-timestamp');
+      timestampDiv.textContent = formatDate(message.timestamp);
+  
+      // const senderDiv = document.createElement('div');
+      // senderDiv.classList.add('message-sender');
+      // senderDiv.textContent = message.sender;
+  
+      const contentDiv = document.createElement('div');
+      contentDiv.classList.add('message-content');
+      contentDiv.textContent = message.content;
+  
+      messageWrapper.appendChild(timestampDiv);
+      // messageWrapper.appendChild(senderDiv);
+      messageWrapper.appendChild(contentDiv);
+  
+      messagesContainer.appendChild(messageWrapper);
+      if (shouldScrollToBottom) {
+        // Auto-scroll to the bottom to show new messages
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
       }
-    })
-    .catch(error => console.error('Error sending message:', error));
+    });
+  
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
   }
   
-  async function getMessagesFromServer() {
+  async function getMessagesFromServer(page = 1) {
     const senderusername = data.Username;
     const receiverusername = currentChatUsername;
     
-    const url = `/get-message?senderusername=${encodeURIComponent(senderusername)}&receiverusername=${encodeURIComponent(receiverusername)}`
+    // Include the 'page' parameter in the request URL
+    // const url = `/get-message?senderusername=${encodeURIComponent(senderusername)}&receiverusername=${encodeURIComponent(receiverusername)}&page=${page}`;
+    const limit = 10;
+  const offset = (page - 1) * limit;
 
+  const url = `/get-message?senderusername=${encodeURIComponent(senderusername)}&receiverusername=${encodeURIComponent(receiverusername)}&limit=${limit}&offset=${offset}`;
+  page = page || currentPage;
+  
     try {
       const response = await fetch(url, {
         method: 'GET',
@@ -563,55 +554,174 @@ function sendMessage(message) {
       }
   
       const privateMessages = await response.json();
-      console.log(privateMessages, ": this is privateMessages");
-      // Now you can call a function to display these messages in the chat window
-      displayMessages(privateMessages);
+      if (page === 1) {
+        // Clear previous messages only if it's the first page
+        const messagesContainer = document.getElementById('messages');
+        messagesContainer.innerHTML = '';
+      }
+      console.log("Fetched messages count: ", privateMessages.length);
+      if (privateMessages.length < 10) {
+        //allMessagesLoaded = true;
+        console.log("Setting allMessagesLoaded to true");
+      } else {
+        console.log("There are more messages to load");
+      }
+      // Display the fetched messages
+      displayMessages(privateMessages, true); // Pass 'true' to append messages
     } catch (error) {
       console.error('There was an error fetching messages from the server:', error);
     }
-
-    // fetch(`/get-messages?username=${encodeURIComponent(senderusername)}`)
-    // .then(response => response.json())
-    // .then(messages => {
-    //   console.log("this is messages content inside the getMessagesFromServer")
-    //   displayMessages(messages);
-    // })
-    // .catch(error => console.error('Error retrieving messages:', error));
   }
   
-  function displayMessages(messages) {
-    const messagesContainer = document.getElementById('messages');
-    messagesContainer.innerHTML = ''; // Clear previous messages
-    messages.forEach(message => {
-      const messageDiv = document.createElement('div');
-      messageDiv.textContent = message.content;
-      messagesContainer.appendChild(messageDiv);
+  let currentPage = 1; // Keep track of the current page of messages
+let loadingMessages = false; // Flag to prevent multiple simultaneous loads
+let allMessagesLoaded = false; // Flag to indicate when all messages are loaded
+
+// Function to load more messages when scrolled to the top
+async function loadMoreMessages() {
+  console.log("Calling LoadMoreMessage");
+  if (loadingMessages || allMessagesLoaded) {
+    console.log("Exit early: ", { loadingMessages, allMessagesLoaded });
+    return;
+  }
+
+  loadingMessages = true;
+
+  const senderusername = data.Username;
+  const receiverusername = currentChatUsername;
+  currentPage++; // Increment page to load the next set of messages
+
+  const url = `/get-message?senderusername=${encodeURIComponent(senderusername)}&receiverusername=${encodeURIComponent(receiverusername)}&page=${currentPage}`;
+
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
     });
+
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+
+    const moreMessages = await response.json();
+    console.log("Received messages: ", moreMessages);
+
+    if (moreMessages && moreMessages.length < 10) {
+      allMessagesLoaded = true;
+      console.log("No more messages to load");
+
+    }
+
+    prependMessages(moreMessages.reverse()); // Add new messages to the top of the chat
+  } catch (error) {
+    console.error('Error:', error);
+  } finally {
+    loadingMessages = false; // Reset loading state
   }
+}
+function prependMessages(messages) {
+  const messagesContainer = document.getElementById('messages');
+  let oldScrollHeight = messagesContainer.scrollHeight;
 
-  //get message from server when i click on the user i want to chat with.
-  //Display message between me loggedInUser and the user i clicked on. 
+  messages.forEach(message => {
+    const messageWrapper = document.createElement('div');
+    messageWrapper.classList.add('message-wrapper', message.sender === data.UsernameId.toString() ? 'right' : 'left');
+    const timestampDiv = document.createElement('div');
+    timestampDiv.classList.add('message-timestamp');
+    timestampDiv.textContent = formatDate(message.timestamp);
 
- 
-  setInterval(() => {
-    console.log(" call me get messageFrom server")
-    getMessagesFromServer() 
-  }, 3000);
+    const contentDiv = document.createElement('div');
+    contentDiv.classList.add('message-content');
+    contentDiv.textContent = message.content;
+
+    // Append children in the same order as displayMessages
+    messageWrapper.appendChild(timestampDiv);
+    messageWrapper.appendChild(contentDiv);
+
+    // Prepend the message wrapper to the messages container
+    messagesContainer.insertBefore(messageWrapper, messagesContainer.firstChild);
+  });
+
+  // Adjust the scroll position so the user stays at the same place in the chat
+  messagesContainer.scrollTop = messagesContainer.scrollHeight - oldScrollHeight;
+}
+
+//  const messagesContainer = document.getElementById('messages');
+
+// // // Check if the scroll event listener is set up correctly
+//  messagesContainer.addEventListener('scroll', async () => {
+// //   // Log the scroll position to make sure the event fires
+
+//   // Check if the user has scrolled to the top and if we're not already loading messages
+//   if (messagesContainer.scrollTop === 0 && !loadingMessages && !allMessagesLoaded) {
+//     console.log('Attempting to load more messages');
+//     await loadMoreMessages();
+//   }
+// });
+
+
+initiateChat(currentChatUsername);
+getMessagesFromServer(1);
+// Throttle function to limit the rate at which a function can fire
+function throttle(func, limit) {
+  let lastFunc;
+  let lastRan;
+  return function() {
+    const context = this;
+    const args = arguments;
+    if (!lastRan) {
+      func.apply(context, args);
+      lastRan = Date.now();
+    } else {
+      clearTimeout(lastFunc);
+      lastFunc = setTimeout(function() {
+        if ((Date.now() - lastRan) >= limit) {
+          func.apply(context, args);
+          lastRan = Date.now();
+        }
+      }, limit - (Date.now() - lastRan));
+    }
+  };
+}
+
+// Add the scroll event listener to your messages container
+
+const messagesContainer = document.getElementById('messages');
+messagesContainer.addEventListener('scroll', throttle(async () => {
+  if (messagesContainer.scrollTop === 0 && !allMessagesLoaded) {
+    console.log('Attempting to load more messages');
+    await loadMoreMessages();
+  }
+}, 500)); // Adjust the throttle limit (e.g., 500ms) as needed
+
+
+// messagesContainer.addEventListener('scroll', () => {
+
+//   console.log('Scrolled', messagesContainer.scrollTop);
+//   if (messagesContainer.scrollTop < 5 && !loadingMessages) {
+//     // The user is within 5 pixels of the top
+//     console.log("heijjoo")
+//   }
+
+// });
+// Call getMessagesFromServer to load the initial messages
+
+
+// Update the rest of your functions and event listeners as needed
+
+
   
-  // Initialize the user list display on page load
+  function formatDate(timestamp) {
+    // Implement date formatting here
+    return new Date(timestamp).toLocaleString();
+  }
   // userList.style.display = 'none'; // Start with the user list hidden
   toggleUserListBtn.textContent = 'Show User List';
 
   // Presumably, you would have a function like 'createUserList' that adds users to the sidebar
    createUserList();
-
-
-// ... (Rest of the createUserList and initiateChat functions as previously provided) ...
-
-
-// Call createUserList on page load or when user data is updated
-// createUserList();
-
 
   // If no posts, display a message
   if (!data.Posts || data.Posts.length === 0) {
@@ -639,27 +749,5 @@ scriptArr.forEach(script => {
 displayComments()
 commentsScript()
 likesFunction()
-
-    
-// document.getElementById('send-btn').addEventListener('click', function() {
-//     var messageBox = document.getElementById('message-input');
-//     var message = messageBox.value.trim();
-//     if(message) {
-//       addMessage(message);
-//       messageBox.value = '';
-//     }
-//   });
-  
-//   function addMessage(message) {
-//     var messagesContainer = document.getElementById('messages');
-//     var messageDiv = document.createElement('div');
-//     messageDiv.textContent = message;
-//     messageDiv.className = 'bg-blue-100 rounded-lg p-2';
-//     messagesContainer.appendChild(messageDiv);
-  
-//     // Scroll to the bottom of the message container
-//     messagesContainer.scrollTop = messagesContainer.scrollHeight;
-//   }
-
 
 }

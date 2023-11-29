@@ -15,9 +15,10 @@ type PrivateMessage struct {
 	Sender    string `json:"sender"`
 	Receiver  string `json:"receiver"`
 	Content   string `json:"content"`
+	Status 	  string `json:"status"`
 	Timestamp string `json:"timestamp"`
 }
-func GetPrivateMessages(db *sql.DB, senderUsername string, readerUsername string) (privateMessages []PrivateMessage, err error) {
+func GetPrivateMessages(db *sql.DB, senderUsername string, readerUsername string, limit int, offset int) (privateMessages []PrivateMessage, err error) {
 	var rows *sql.Rows
 	fmt.Println("sender and reciever inside GetPrivateMessages is: ", senderUsername, "\n",readerUsername)
 	fmt.Println("Call inside GetPrivateMessages")
@@ -31,7 +32,7 @@ func GetPrivateMessages(db *sql.DB, senderUsername string, readerUsername string
 		fmt.Println(err)
 	}
 	fmt.Println("Need on: ", senderUserID, readerUserID)
-	rows, err = db.Query(`SELECT sender_id, receiver_id, content, created_at FROM private_messages WHERE (sender_id = ? AND receiver_id = ?)OR (sender_id = ? AND receiver_id = ?) ORDER BY created_at;`, senderUserID, readerUserID, readerUserID, senderUserID)
+	rows, err = db.Query(`SELECT sender_id, receiver_id, content, created_at FROM private_messages WHERE (sender_id = ? AND receiver_id = ?)OR (sender_id = ? AND receiver_id = ?) ORDER BY created_at DESC LIMIT ? OFFSET ?;`, senderUserID, readerUserID, readerUserID, senderUserID, limit, offset)
 		if err != nil {
 			fmt.Println(err)
 			return nil , fmt.Errorf("Failed to execute query: %v", err)
