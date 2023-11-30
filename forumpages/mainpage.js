@@ -371,11 +371,11 @@ console.log("do i arrive to the data.posts?")
       appDiv.appendChild(postDiv);
   });
 
-//Sample data - replace this with dynamic data if needed
 
-console.log("das is username", data.Usernames, "das is usernames")
 
-// Function to create user list
+  function checkIfOnline() {
+  
+  }
 
 let currentChatUsername = null; 
 function createUserList() {
@@ -383,7 +383,6 @@ function createUserList() {
   const userListContainer = document.getElementById('userList')
   // Clear out current list
   userListContainer.innerHTML = '';
-  
   // Create user list items
   data.Usernames.forEach(user => {
       const userItem = document.createElement('div');
@@ -395,6 +394,33 @@ function createUserList() {
       userListContainer.appendChild(userItem);
   });
 
+}
+
+function updateUserList(usernames) {
+  const userListContainer = document.getElementById('userList');
+  userListContainer.innerHTML = ''; // Clear the current list
+
+  usernames.forEach(user => {
+    const userItem = document.createElement('div');
+    userItem.classList.add('user-list-item');
+    userItem.classList.add('chatboxToggle');
+    userItem.textContent = user; // Assuming the user object has a username property
+    userItem.onclick = () => initiateChat(user);
+    userListContainer.appendChild(userItem);
+    
+  });
+addEventListenersToUsers()
+}
+
+function addEventListenersToUsers() {
+  const users = document.querySelectorAll('.chatboxToggle');
+  const chatBox = document.getElementById('chatbox');
+
+  users.forEach(user => {
+    user.addEventListener('click', () => {
+      chatBox.classList.add('expanded');
+    });
+  });
 }
 
 // Function to initiate chat with a user
@@ -437,13 +463,21 @@ function initiateChat(nickname) {
     socket.onmessage = function(event) {
       console.log(`[message] Data received from server: ${event.data}`);
       try {
-        const messageData = JSON.parse(event.data);
-        // Assuming messageData contains a single message object
-        displayMessages([messageData]); // Add the new message to the chat
+        const data = JSON.parse(event.data);
+      
+        if (data.type === 'message') {
+          // Handle message data
+          //try to reverse here
+          displayMessages(data.messages.reverse()); // Assuming data.Messages contains an array of message objects
+      } else if (data.type === 'userlist') {
+          // Handle user list data
+          updateUserList(data.userlist); // Assuming data.Userlist contains the updated user list
+      }
       } catch (e) {
         console.error('Error parsing JSON:', e);
       }
     };
+    
     
 
     socket.onclose = function(event) {
@@ -485,6 +519,7 @@ function initiateChat(nickname) {
     } else {
       console.error('WebSocket is not open. Cannot send message.');
     }
+    
   }
 
   
@@ -567,7 +602,7 @@ function initiateChat(nickname) {
         console.log("There are more messages to load");
       }
       // Display the fetched messages
-      displayMessages(privateMessages, true); // Pass 'true' to append messages
+      displayMessages(privateMessages.reverse(), true); // Pass 'true' to append messages
     } catch (error) {
       console.error('There was an error fetching messages from the server:', error);
     }
@@ -606,7 +641,8 @@ async function loadMoreMessages() {
     }
 
     const moreMessages = await response.json();
-    console.log("Received messages: ", moreMessages);
+    console.log("[LoadMoreMessages]Received messages: ", moreMessages);
+    
 
     if (moreMessages && moreMessages.length < 10) {
       allMessagesLoaded = true;
@@ -614,13 +650,15 @@ async function loadMoreMessages() {
 
     }
 
-    prependMessages(moreMessages.reverse()); // Add new messages to the top of the chat
+    prependMessages(moreMessages); // Add new messages to the top of the chat
   } catch (error) {
     console.error('Error:', error);
   } finally {
     loadingMessages = false; // Reset loading state
   }
 }
+
+
 function prependMessages(messages) {
   const messagesContainer = document.getElementById('messages');
   let oldScrollHeight = messagesContainer.scrollHeight;
@@ -695,24 +733,8 @@ messagesContainer.addEventListener('scroll', throttle(async () => {
     await loadMoreMessages();
   }
 }, 500)); // Adjust the throttle limit (e.g., 500ms) as needed
-
-
-// messagesContainer.addEventListener('scroll', () => {
-
-//   console.log('Scrolled', messagesContainer.scrollTop);
-//   if (messagesContainer.scrollTop < 5 && !loadingMessages) {
-//     // The user is within 5 pixels of the top
-//     console.log("heijjoo")
-//   }
-
-// });
-// Call getMessagesFromServer to load the initial messages
-
-
 // Update the rest of your functions and event listeners as needed
 
-
-  
   function formatDate(timestamp) {
     // Implement date formatting here
     return new Date(timestamp).toLocaleString();

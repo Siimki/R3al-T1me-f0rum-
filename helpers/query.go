@@ -1,14 +1,12 @@
 package helpers
 
-
-
 import (
-	
-	"net/http"
 	"database/sql"
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/http"
+	"strconv"
 )
 
 type PrivateMessage struct {
@@ -20,9 +18,11 @@ type PrivateMessage struct {
 }
 func GetPrivateMessages(db *sql.DB, senderUsername string, readerUsername string, limit int, offset int) (privateMessages []PrivateMessage, err error) {
 	var rows *sql.Rows
-	fmt.Println("sender and reciever inside GetPrivateMessages is: ", senderUsername, "\n",readerUsername)
+	fmt.Println("sender and reciever inside GetPrivateMessages is: ", senderUsername, "\n",readerUsername, limit, offset)
 	fmt.Println("Call inside GetPrivateMessages")
-	
+	if limit == 0 {
+		limit = 10 
+	}
 	senderUserID,err  := GetUserID(senderUsername)
 	if err != nil {
 		fmt.Println(err)
@@ -51,19 +51,40 @@ func GetPrivateMessages(db *sql.DB, senderUsername string, readerUsername string
 	
 			if err := rows.Err(); err != nil {
 				fmt.Println(err)
-
 				return nil , fmt.Errorf("Failed after iterating rows: %v", err)
 			}
-			fmt.Println("This is private Messages:\n", privateMessages)
+
+
+
+			fmt.Println("This is length of private Messages inside the SQL func:\n", len(privateMessages))
 			return privateMessages, nil
 		}	
 	fmt.Println("GetPrivateMessages: I should not arrive here?")
 	return privateMessages, nil 
 }
 
-func GetUsernames(db *sql.DB) (usernames []string, err error) {
+func GetUsernames(db *sql.DB, senderIdInt int) (usernames []string, err error) {
 	var rows *sql.Rows
-	rows, err = db.Query("SELECT username FROM users;")
+//	regularQueryForUser := "SELECT username FROM users ORDER BY UPPER(username);"
+	senderId := strconv.Itoa(senderIdInt) 
+
+	
+	queryForActiveUser :=
+	`SELECT 
+    u.username
+FROM 
+    users u
+LEFT JOIN 
+    private_messages pm ON (u.id = pm.sender_id OR u.id = pm.receiver_id) AND (pm.sender_id = ? OR pm.receiver_id = ?)
+GROUP BY 
+    u.id
+ORDER BY 
+    CASE WHEN MAX(pm.created_at) IS NULL THEN 1 ELSE 0 END, 
+    MAX(pm.created_at) DESC NULLS LAST,  
+    LOWER(u.username) ASC; 
+`
+
+	rows, err = db.Query(queryForActiveUser, senderId, senderId)
 		if err != nil {
 			return nil , fmt.Errorf("Failed to execute query: %v", err)
 		}

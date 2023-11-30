@@ -61,17 +61,9 @@ type Vote struct {
 	Username string `json:"username"`
 }
 
+
+
 var clients = make(map[string]*websocket.Conn)
-
-
-// type Message struct {
-//     ID         int
-//     SenderID   int
-//     ReceiverID int
-//     Content    string
-//     CreatedAt  time.Time
-//     // Add other fields if necessary
-// }
 
 func main() {
 
@@ -141,13 +133,21 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 
 
 	for { 
-
+		fmt.Println("the clients are", clients)
 		var msg struct {
 			Message          string `json:"message"`
 			SenderUsername   string `json:"senderusername"`
 			ReceiverUsername string `json:"receiverusername"`
 			Status 			 string `json:"status"`
 		}
+		type WebSocketResponse struct {
+			Type     string        `json:"type"`
+			Messages any     `json:"messages,omitempty"`
+			Userlist []string      `json:"userlist,omitempty"`
+			Online bool 	 `json:"active,omitempty"`
+		}
+
+
 
 		if err := ws.ReadJSON(&msg); err != nil {
 			log.Println("read:", err)
@@ -161,25 +161,72 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		}
 
 		if senderWs, ok := clients[msg.SenderUsername]; ok {
-	
+			
 			privateMessages, err := helpers.GetPrivateMessages(db, msg.SenderUsername, msg.ReceiverUsername, strLimit, offsetLimit)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 
-			if err := senderWs.WriteJSON(privateMessages); err != nil {
+			if len(privateMessages) == 0 {
+				fmt.Println("No messages found")
+			}
+
+			response := WebSocketResponse{
+				Type:     "message",
+				Messages: privateMessages,
+			}
+			
+			if err := senderWs.WriteJSON(response); err != nil {
 				log.Println("write confirmation error:", err )
 				//handle errror
 			}
 		}
 
 		if receiverWs, ok := clients[msg.ReceiverUsername]; ok {
-			if err := receiverWs.WriteJSON(msg); err != nil {
-				log.Println("Write error:", err)
-				//handle error
+			privateMessages, err := helpers.GetPrivateMessages(db, msg.SenderUsername, msg.ReceiverUsername, strLimit, offsetLimit)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			if len(privateMessages) == 0 {
+				fmt.Println("No messages found")
+			}
+
+			response := WebSocketResponse{
+				Type:     "message",
+				Messages: privateMessages,
+			}
+			
+			if err := receiverWs.WriteJSON(response); err != nil {
+				log.Println("write confirmation error:", err )
+				//handle errror
 			}
 		}
+		// After message is sent, update user list and broadcast it
+		userId, err := helpers.GetUserID(msg.SenderUsername)
+        if err != nil {
+            log.Println("GetUserID error:", err)
+            continue
+        }
+
+        updatedUserList, err := helpers.GetUsernames(db, userId)
+        if err != nil {
+            log.Println("Error fetching updated user list:", err)
+            continue
+        }
+		broadcastData := WebSocketResponse{
+			Type:     "userlist",
+			Userlist: updatedUserList,
+		}
+		
+
+        for _, clientWs := range clients {
+            if err := clientWs.WriteJSON(broadcastData); err != nil {
+                log.Println("Error sending updated user list:", err)
+            }
+        }
 	}
 	
 }
@@ -760,10 +807,7 @@ func homePageHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	comments, _ := getCommentsFromDatabase(db)
 	posts = addCommentsToPost(posts, comments)
 	likesToPostsAndComments(db, posts)
-	usernames, err := helpers.GetUsernames(db)
-	if err != nil {
-		fmt.Println("This is error:", err)
-	}
+	
 
 	userSession, err := helpers.ValidateSessionFromCookie(w, r)
 	var username string
@@ -782,9 +826,15 @@ func homePageHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		fmt.Println("This is usersession in homepagehandler \n", userSession)
 		fmt.Println("This is error", err)
 	}
+
 	usernameId, err := helpers.GetUserID(username)
 	if err != nil {
 		fmt.Println(err)
+	}
+
+	usernames, err := helpers.GetUsernames(db, usernameId)
+	if err != nil {
+		fmt.Println("This is error:", err)
 	}
 	// admin pw is Admin123
 

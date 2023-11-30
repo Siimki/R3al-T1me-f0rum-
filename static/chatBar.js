@@ -42,10 +42,10 @@
 
     
     // Add click event to each user to open a chat window
-    users.forEach(user => {
-      user.addEventListener('click', () => {
-        var receiverusername = user.getAttribute('data-username');
-        console.log("i know who you are messaging")
-        openChat(receiverusername);
+      users.forEach(user => {
+        user.addEventListener('click', () => {
+          var receiverusername = user.getAttribute('data-username');
+          console.log("i know who you are messaging")
+          openChat(receiverusername);
+        });
       });
-    });
