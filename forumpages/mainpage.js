@@ -371,12 +371,32 @@ console.log("do i arrive to the data.posts?")
       appDiv.appendChild(postDiv);
   });
 
-
-
   function checkIfOnline() {
   
   }
 
+  function updateUserStatus(username, isOnline, userId) {
+    const userItem = document.querySelector(`.user-list-item[data-user-id="${userId}"]`);
+    
+    if (userItem) {
+      // If the user is already in the list, update their status
+      if (isOnline) {
+        userItem.classList.add('online');
+      } else {
+        userItem.classList.remove('online');
+      }
+    } else {
+      // If the user is not in the list and is online, add them
+      if (isOnline) {
+        const newUserItem = document.createElement('div');
+        newUserItem.classList.add('user-list-item', 'chatboxToggle', 'online');
+        newUserItem.textContent = username;
+        newUserItem.setAttribute('data-username', username);
+        newUserItem.onclick = () => initiateChat(username);
+        document.getElementById('userList').appendChild(newUserItem);
+      }
+    }
+  }
 let currentChatUsername = null; 
 function createUserList() {
 
@@ -384,31 +404,45 @@ function createUserList() {
   // Clear out current list
   userListContainer.innerHTML = '';
   // Create user list items
-  data.Usernames.forEach(user => {
-      const userItem = document.createElement('div');
-      userItem.classList.add('user-list-item');
-      userItem.classList.add('chatboxToggle')
-      userItem.textContent = user;  
-      currentChatUsername = user; 
-      userItem.onclick = () => initiateChat(user); // Replace with actual chat initiation logic
-      userListContainer.appendChild(userItem);
+  data.Userlist.forEach(user => {
+    const userItem = document.createElement('div');
+    userItem.classList.add('user-list-item', 'chatboxToggle');
+    userItem.classList.add('chatboxToggle')
+    userItem.textContent = user.username;  
+    currentChatUsername = user; 
+    userItem.dataset.userId = user.id; // Store the user ID using data attributes
+  
+    // Set up the click event for initiating chat
+    userItem.onclick = () => initiateChat(user.username, user.id); // Pass both username and ID
+  
+    userListContainer.appendChild(userItem);
   });
+  
+console.log("usernameID",data.Userlist[0])
+console.log("usernameID", data.UsernameId)
 
 }
 
-function updateUserList(usernames) {
+function updateUserList(userlist) {
   const userListContainer = document.getElementById('userList');
   userListContainer.innerHTML = ''; // Clear the current list
 
-  usernames.forEach(user => {
+  userlist.forEach(user => {
     const userItem = document.createElement('div');
-    userItem.classList.add('user-list-item');
-    userItem.classList.add('chatboxToggle');
-    userItem.textContent = user; // Assuming the user object has a username property
-    userItem.onclick = () => initiateChat(user);
+    userItem.classList.add('user-list-item', 'chatboxToggle');
+    userItem.textContent = user.username;  
+    userItem.dataset.userId = user.id; // Store the user ID using data attributes
+    currentChatUsername = user; 
+    // chatBox.classList.add('expanded');
+
+  
+    // Set up the click event for initiating chat
+    userItem.onclick = () => initiateChat(user.username, user.id); // Pass both username and ID
+  
     userListContainer.appendChild(userItem);
     
   });
+  
 addEventListenersToUsers()
 }
 
@@ -432,6 +466,8 @@ function initiateChat(nickname) {
   getMessagesFromServer(1);
   currentPage = 1;
   allMessagesLoaded = false;
+  const chatHeaderUsername = document.getElementById('chat-header-username'); // Make sure you have this element in your HTML
+  chatHeaderUsername.textContent = `Chat with ${nickname}`;
 }
   const toggleUserListBtn = document.getElementById('toggleUserListBtn');
   const userList = document.getElementById('userList'); // Assuming this is the ID of your user list sidebar
@@ -472,6 +508,9 @@ function initiateChat(nickname) {
       } else if (data.type === 'userlist') {
           // Handle user list data
           updateUserList(data.userlist); // Assuming data.Userlist contains the updated user list
+      } else if (data.type == 'status') {
+        console.log("[UPDATE]: Updating userlist status ")
+         updateUserStatus(data.username, data.online, data.userid);
       }
       } catch (e) {
         console.error('Error parsing JSON:', e);
@@ -593,6 +632,7 @@ function initiateChat(nickname) {
         // Clear previous messages only if it's the first page
         const messagesContainer = document.getElementById('messages');
         messagesContainer.innerHTML = '';
+        
       }
       console.log("Fetched messages count: ", privateMessages.length);
       if (privateMessages.length < 10) {

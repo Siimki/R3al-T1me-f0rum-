@@ -35,6 +35,7 @@
       const chatHeaderUsername = document.getElementById('chat-header-username'); // Make sure you have this element in your HTML
       chatHeaderUsername.textContent = `Chat with ${username}`;
       chatBox.classList.add('expanded');
+
       // GetMessagesFromServer() 
       // Load message history and establish connection for real-time messaging
       // This will likely involve an AJAX call to your backend or establishing a WebSocket connection

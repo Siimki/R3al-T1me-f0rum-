@@ -16,6 +16,64 @@ type PrivateMessage struct {
 	Status 	  string `json:"status"`
 	Timestamp string `json:"timestamp"`
 }
+
+type Userlist struct {
+	ID       int    `json:"id"`
+	Username string `json:"username"`
+}
+
+
+
+func GetUsernamesIds(db *sql.DB,  senderIdInt int) ([]Userlist, error) {
+    // Define the SQL query for fetching all usernames and IDs
+	senderId := strconv.Itoa(senderIdInt) 
+
+    query := 	`SELECT 
+	u.id,
+    u.username
+FROM 
+    users u
+LEFT JOIN 
+    private_messages pm ON (u.id = pm.sender_id OR u.id = pm.receiver_id) AND (pm.sender_id = ? OR pm.receiver_id = ?)
+GROUP BY 
+    u.id
+ORDER BY 
+    CASE WHEN MAX(pm.created_at) IS NULL THEN 1 ELSE 0 END, 
+    MAX(pm.created_at) DESC NULLS LAST,  
+    LOWER(u.username) ASC; 
+`
+
+    // Execute the query
+    rows, err := db.Query(query,senderId, senderId)
+    if err != nil {
+        return nil, fmt.Errorf("failed to execute query: %v", err)
+    }
+    defer rows.Close()
+
+    // Slice to hold the user data
+    var users []Userlist
+
+    // Iterate over the rows
+    for rows.Next() {
+        var user Userlist
+        if err := rows.Scan(&user.ID, &user.Username); err != nil {
+            return nil, fmt.Errorf("failed to scan row: %v", err)
+        }
+        users = append(users, user)
+    }
+
+    // Check for errors after iterating
+    if err := rows.Err(); err != nil {
+        return nil, fmt.Errorf("failed after iterating rows: %v", err)
+    }
+
+    // Return the slice of users
+	fmt.Println("[HALLO]: ", users)
+    return users, nil
+}
+
+
+
 func GetPrivateMessages(db *sql.DB, senderUsername string, readerUsername string, limit int, offset int) (privateMessages []PrivateMessage, err error) {
 	var rows *sql.Rows
 	fmt.Println("sender and reciever inside GetPrivateMessages is: ", senderUsername, "\n",readerUsername, limit, offset)

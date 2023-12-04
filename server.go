@@ -43,6 +43,7 @@ type HomePageData struct {
 	Moderators         []string
 	ReportedRequests   int
 	UsernameId 		   int
+	Userlist          []helpers.Userlist // Changed from []string to []UserWithID
 }
 
 type Comment struct {
@@ -63,7 +64,13 @@ type Vote struct {
 
 
 
-var clients = make(map[string]*websocket.Conn)
+var clients = make(map[string]Client) // map username to websocket and additional info
+
+// var clients = make(map[string]*websocket.Conn)
+type Client struct {
+    username string
+    ws       *websocket.Conn
+}
 
 func main() {
 
@@ -121,7 +128,9 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	limit := r.URL.Query().Get("limit")
 	offset := r.URL.Query().Get("offset")
 	fmt.Println("this is username, limit and offset from URL", username, limit, offset)
-	clients[username] = ws 
+	// clients[username] = ws 
+	clients[username] = Client{username, ws}
+
 	strLimit, err := strconv.Atoi(limit)
 	if err != nil {
 		fmt.Println("str conversion fucked ")
@@ -131,7 +140,8 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		fmt.Println("Str conversion fucked v2")
 	}
 
-
+   // Notify all users about the updated status
+   notifyUserStatus(username, true)
 	for { 
 		fmt.Println("the clients are", clients)
 		var msg struct {
@@ -143,7 +153,7 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		type WebSocketResponse struct {
 			Type     string        `json:"type"`
 			Messages any     `json:"messages,omitempty"`
-			Userlist []string      `json:"userlist,omitempty"`
+			Userlist []helpers.Userlist      `json:"userlist,omitempty"`
 			Online bool 	 `json:"active,omitempty"`
 		}
 
@@ -177,7 +187,7 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 				Messages: privateMessages,
 			}
 			
-			if err := senderWs.WriteJSON(response); err != nil {
+			if err := senderWs.ws.WriteJSON(response); err != nil {
 				log.Println("write confirmation error:", err )
 				//handle errror
 			}
@@ -199,7 +209,7 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 				Messages: privateMessages,
 			}
 			
-			if err := receiverWs.WriteJSON(response); err != nil {
+			if err := receiverWs.ws.WriteJSON(response); err != nil {
 				log.Println("write confirmation error:", err )
 				//handle errror
 			}
@@ -211,7 +221,7 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request, db *sql.DB) {
             continue
         }
 
-        updatedUserList, err := helpers.GetUsernames(db, userId)
+        updatedUserList, err := helpers.GetUsernamesIds(db, userId)
         if err != nil {
             log.Println("Error fetching updated user list:", err)
             continue
@@ -223,12 +233,39 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		
 
         for _, clientWs := range clients {
-            if err := clientWs.WriteJSON(broadcastData); err != nil {
+            if err := clientWs.ws.WriteJSON(broadcastData); err != nil {
                 log.Println("Error sending updated user list:", err)
             }
         }
 	}
 	
+}
+
+
+func notifyUserStatus(username string, online bool) {
+    // Create a response struct
+	userID, err := helpers.GetUserID(username)
+	if err != nil {
+		fmt.Println(err)
+	}
+    response := struct {
+        Type     string `json:"type"`
+        Username string `json:"username"`
+		UserId   int `json:"userid"`
+        Online   bool   `json:"online"`
+    }{
+        Type:     "status",
+        Username: username,
+		UserId: userID,
+        Online:   online,
+    }
+
+    // Send the status to all connected clients
+    for _, client := range clients {
+        if err := client.ws.WriteJSON(response); err != nil {
+            log.Printf("error: %v", err)
+        }
+    }
 }
 
 func liteMesssageHandler(msg string, senderName string, receiver string, db *sql.DB) (err error ) {
@@ -807,6 +844,11 @@ func homePageHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	comments, _ := getCommentsFromDatabase(db)
 	posts = addCommentsToPost(posts, comments)
 	likesToPostsAndComments(db, posts)
+	userlist, err := helpers.GetUsernamesIds(db, 1)
+	if err != nil {
+		fmt.Println("[ERROR]", err)
+	}
+	fmt.Println("[USERLIST]", userlist)
 	
 
 	userSession, err := helpers.ValidateSessionFromCookie(w, r)
@@ -846,6 +888,7 @@ func homePageHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		ModerationRequests: moderationRequests,
 		ReportedRequests:   count,
 		UsernameId:         usernameId,
+		Userlist: 			userlist,	
 	}
 
 	fmt.Println("HomepageHandler got called!")
