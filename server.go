@@ -143,7 +143,6 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request, db *sql.DB) {
    // Notify all users about the updated status
    notifyUserStatus(username, true)
 	for { 
-		fmt.Println("the clients are", clients)
 		var msg struct {
 			Message          string `json:"message"`
 			SenderUsername   string `json:"senderusername"`
@@ -156,8 +155,9 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 			Userlist []helpers.Userlist      `json:"userlist,omitempty"`
 			Online bool 	 `json:"active,omitempty"`
 		}
-
-
+		for _, v := range clients {
+			notifyUserStatus(v.username, true)
+		}
 
 		if err := ws.ReadJSON(&msg); err != nil {
 			log.Println("read:", err)
@@ -729,24 +729,54 @@ func addComment(w http.ResponseWriter, r *http.Request) {
 }
 
 func createPost(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+	(w).Header().Set("Access-Control-Allow-Origin", "*") // or a specific domain
+    (w).Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+    (w).Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+	type PostData struct {
+        PostContent string   `json:"content"`
+        Categories  []string `json:"categories"`
+    }
+    body, err := ioutil.ReadAll(r.Body)
+    if err != nil {
+        // handle error
+        http.Error(w, "Error reading request body", http.StatusInternalServerError)
+        return
+    }
+
+    // Don't forget to close the body when you're done with it
+    defer r.Body.Close()
+
+    // Convert the body to a string for printing
+    bodyString := string(body)
+    fmt.Println(bodyString)
+	var postData PostData
+	    // Decode the JSON body
+		err = json.NewDecoder(r.Body).Decode(&postData)
+		if err != nil {
+			fmt.Println("[CREATEPOST ]", err)
+			fmt.Println(r.Body)
+			http.Error(w, "Bad request", http.StatusBadRequest)
+			return
+		}
 
 	categories, err := formValue(w, r)
 	if err != nil {
+		fmt.Println("[createPostHandler]", err)
 		http.Error(w, "Failed in formValue", http.StatusBadRequest)
 		return
 	}
 
-	postContent := r.FormValue("postContent")
+
 
 	userSession, _ := helpers.ValidateSessionFromCookie(w, r)
 
 	userID := helpers.SQLSelectUserID(db, userSession.Username)
-	if postContent != "" {
-		if err := helpers.SQLInsertPost(db, postContent, userID); err != nil {
+	if postData.PostContent != "" {
+		if err := helpers.SQLInsertPost(db, postData.PostContent, userID); err != nil {
 			http.Error(w, "failed to insert post: %w", http.StatusBadRequest)
 		}
 	} else {
@@ -759,7 +789,7 @@ func createPost(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	}
 	helpers.SQLInsertCategorie(db, postID, categories)
 
-	http.Redirect(w, r, "homepage.html", http.StatusSeeOther)
+	// http.Redirect(w, r, "homepage.html", http.StatusSeeOther)
 }
 
 func serveCreatePostPage(w http.ResponseWriter, r *http.Request) {
@@ -919,7 +949,7 @@ func homePageHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 }
 
 func registerHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("early success")
+	fmt.Println("[RegisterHandler]: Start registering")
 	var response struct {
 		Success bool   `json:"success"`
 		Message string `json:"message"`
@@ -948,11 +978,16 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 		PasswordRaw         string `json:"password"`
 		Email               string `json:"email"`
 		AppliesForModerator string `json:"checkbox"`
+		FirstName  string `json:"firstname"`
+        LastName   string `json:"lastname"`
+        Age        string    `json:"age"`
+        Gender     string `json:"gender"`
 	}
 
 	err = json.NewDecoder(r.Body).Decode(&requestData)
 	if err != nil {
 		fmt.Println("Failed to decode request body in: registerHandler")
+		fmt.Println("error is ", err)
 		http.Error(w, "Failed to decode request body", http.StatusBadRequest)
 		return
 	}
@@ -961,6 +996,10 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 	email2 := requestData.Email
 	appliesForModerator2 := requestData.AppliesForModerator
 	password2 := requestData.PasswordRaw
+	firstname := requestData.FirstName
+    lastname := requestData.LastName
+    ageString := requestData.Age
+    gender := requestData.Gender
 
 	body := r.FormValue("body")
 	fmt.Println("abybody_", body)
@@ -981,8 +1020,12 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		apply = 0
 	}
-
-	err = helpers.InitalizeDb(username2, string(cryptedPassword), email2, "user", apply)
+	
+	age, err := strconv.Atoi(ageString) 
+	if err != nil {
+		fmt.Println("StrConv failed: ", err)
+	}
+	err = helpers.InitalizeDb(username2, string(cryptedPassword), email2, "user", apply, firstname, lastname, gender, age)
 	if err != nil {
 
 		errMessage, _ := helpers.ErrorCheck(err)
@@ -1033,10 +1076,10 @@ func loginHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	}
 	fmt.Println("Inside loginhandler2")
 
-	username := requestData["login-username"]
+	usernameOrEmail := requestData["login-username"]
 	password := requestData["login-password"]
-	fmt.Println("this is password", password, username)
-	row := db.QueryRow("SELECT password FROM users WHERE username = ?;", username)
+	fmt.Println("this is password", password, usernameOrEmail)
+	row := db.QueryRow("SELECT password FROM users WHERE username = ? OR email = ?;", usernameOrEmail, usernameOrEmail)
 
 	var hashedPassword string
 	err = row.Scan(&hashedPassword)
@@ -1054,7 +1097,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	match, _ := helpers.PasswordCheck(password, hashedPassword)
 	fmt.Println("Inside loginhandler3")
 	if match {
-		helpers.CreateSession(w, r, username)
+		helpers.CreateSession(w, r, usernameOrEmail)
 		http.Redirect(w, r, "/homepage", http.StatusSeeOther) // Assuming "/home" is the route for the homePageHandler
 		fmt.Println("Login handler got called with correct password")
 	} else {
@@ -1229,7 +1272,7 @@ func formValue(w http.ResponseWriter, r *http.Request) ([]int, error) {
 	csValue := r.FormValue("counter-strike")
 	lolValue := r.FormValue("league")
 	rsValue := r.FormValue("runescape")
-
+	fmt.Println("[formValue]: rs Categorie:", rsValue)
 	var categories []int
 
 	if csValue != "" {

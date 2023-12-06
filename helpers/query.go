@@ -171,7 +171,7 @@ func SQLAuthorize(w http.ResponseWriter, r *http.Request, db *sql.DB, username s
 
 	count, _ := CountSQL(db, "usernameCheck", username)
 	if count == 0 {
-		InsertUser(db, username, "", email,"user",0)
+		InsertUser(db, username, "", email,"user",0, "", "", "", 0)
 		CreateSession(w, r, username) 
 		http.Redirect(w, r, "/homepage.html", http.StatusTemporaryRedirect)
 	} else if count == 1 {
@@ -203,14 +203,14 @@ func CountSQL(db *sql.DB, status string, username string) (count int, err error)
 	return count, nil
 }
 
-func InsertUser(db *sql.DB, username, password, email, role string, apply int) error {
-	stmt, err := db.Prepare("INSERT INTO users(username, password, email, role, appliesformoderator) VALUES (?, ?, ?, ?, ?)")
+func InsertUser(db *sql.DB, username, password, email, role string, apply int, firstName string, lastName string, gender string, age int) error {
+	stmt, err := db.Prepare("INSERT INTO users(username, password, email, role, appliesformoderator, last_name, first_name, age, gender) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
 	if err != nil {
 		return fmt.Errorf("failed to prepare user statement: %w", err)
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(username, password, email, role, apply)
+	_, err = stmt.Exec(username, password, email, role, apply, lastName, firstName, gender, age)
 	if err != nil {
 		return fmt.Errorf("failed to execute user statement: %w", err)
 	}
@@ -248,7 +248,7 @@ func GetDbConnection() (*sql.DB, error) {
 	return db, nil
 }
 
-func InitalizeDb(username string, password string, email string, role string, apply int) error {
+func InitalizeDb(username string, password string, email string, role string, apply int, firstName string, lastName string, gender string, age int) error {
 
 	db, err := GetDbConnection()
 	if err != nil {
@@ -260,7 +260,7 @@ func InitalizeDb(username string, password string, email string, role string, ap
 		return fmt.Errorf("failed to execute schema: %w", err)
 	}
 
-	if err := InsertUser(db, username, password, email, role, apply); err != nil {
+	if err := InsertUser(db, username, password, email, role, apply, firstName, lastName, gender, age); err != nil {
 		//fmt.Println("000", email, "000", password, username)
 		return fmt.Errorf("failed to insert user: %w", err)
 	}

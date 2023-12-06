@@ -1,70 +1,17 @@
-// var addcomment = true 
-
-// window.addEventListener("load", function () {
-//   let lastPage = localStorage.getItem("lastActivePage") || "registration";
-//   console.log("LastPage is:", lastPage, addcomment);
-//   if (lastPage == "registered") {
-//     loadPage("registration");
-//     console.log("Log line 6")
-//   } else if (addcomment){
-//     addcomment = false
-//     console.log("log line 12", addcomment)
-    
-//     loadPage("addcomment");
-//   }
-// });
-
-// function loadPage(pageName) {
-//   //if cookie is not exist always go to registration page
-//   localStorage.setItem("lastActivePage", "registration");
-
-//   switch (pageName) {
-//     case "registration":
-//       import("../forumpages/registration.js").then((module) => {
-//         module.loadRegistrationForm();
-//       });
-//       console.log("registration");
-//       break;
-//     case "registered":
-//       import("../forumpages/registered.js").then((module) => {
-//         module.registrationComplete();
-//       });
-//       console.log("registration2");
-
-//       break;
-//     case "login":
-//       import("../forumpages/mainpage.js").then((module) => {
-//         console.log("It is case login in loadpage");
-//         module.mainPage();
-//       });
-//       break;
-//     case "addcomment":
-//       import("../forumpages/addcomment.js").then((module) => {
-//         console.log("It is case COMMENT in loadpage");
-//         module.addCommentForm();
-//       });
-//       break;
-//     default:
-//       import("../forumpages/registration.js").then((module) => {
-//         module.loadRegistrationForm();
-//       });
-//       console.log("Page not found");
-//   }
-// }
-
 // Define your routes
 const routes = {
   "#registration": "../forumpages/registration.js",
   "#registered": "../forumpages/registered.js",
   "#login": "../forumpages/mainpage.js",
   "#addcomment": "../forumpages/addcomment.js",
+  "#createpost": "../forumpages/createpost.js"
 };
 
 // Load the page based on the current hash
 function loadPageFromHash() {
   const hash = window.location.hash || "#registration"; // Default to registration page
   const pageModule = routes[hash];
-  console.log("Calling loadPageFromHash")
+  console.log("Calling loadPageFromHash", hash)
 
   if (pageModule) {
     import(pageModule).then((module) => {
@@ -80,6 +27,9 @@ function loadPageFromHash() {
           break;
         case "#addcomment":
           module.addCommentForm();
+          break;
+        case "#createpost":
+          module.createPost();
           break;
         // ... other cases ...
       }

@@ -1,8 +1,9 @@
 import { data, fetchDataFromServer, loginHandler} from './registration.js'
 import { displayComments } from '/static/displayComments.js';
-import { changeColor } from '/static/changeColor.js'; // Replace 'function1' with the actual function name
-import { commentsScript } from '/static/commentsScript.js'; // Replace 'function2' with the actual function name
-import { likesFunction } from '/static/likesFunction.js'; // Replace 'function3' with the actual function name
+import { changeColor } from '/static/changeColor.js'; 
+import { commentsScript } from '/static/commentsScript.js'; 
+import { likesFunction } from '/static/likesFunction.js';
+
 
 
 
@@ -39,15 +40,24 @@ export async function mainPage() {
   buttonDiv.className = 'flex justify-center p-2 font-bold';
 
   // Create form and button elements
-  // Note: For brevity, I'm just doing one button. You can repeat similar logic for all buttons.
   const createPostForm = document.createElement('form');
-  createPostForm.action = '/createpost';
-  createPostForm.method = 'post';
+  createPostForm.action = '#createpost';
+  createPostForm.method = 'get';
 
   const createPostBtn = document.createElement('button');
   createPostBtn.className = 'bg-blue-300 hover:bg-blue-400 border rounded p-2 m-1 transition duration-500';
   createPostBtn.type = 'submit';
   createPostBtn.textContent = 'Create Post';
+
+//   const createPostForm = document.createElement('form');
+// createPostForm.method = 'get';
+// createPostForm.action = '#createpost';
+
+// const createPostButton = document.createElement('input');
+// createPostButton.type = 'submit';
+// createPostButton.value = 'Create Post';
+// createPostButton.className = 'submit-button bg-gray-300 hover:bg-gray-400 text-black p-2 mt-4 rounded';
+
 
   createPostForm.appendChild(createPostBtn);
   buttonDiv.appendChild(createPostForm);

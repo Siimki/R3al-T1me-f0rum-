@@ -4,7 +4,11 @@
     password TEXT NOT NULL,
     role TEXT NOT NULL,
     appliesformoderator INTEGER NOT NULL DEFAULT 0,
-    email TEXT NOT NULL UNIQUE
+    email TEXT NOT NULL UNIQUE,
+    age INTEGER NOT NULL,
+    gender TEXT,
+    first_name TEXT,
+    last_name TEXT
 );
 
 CREATE TABLE IF NOT EXISTS posts (

@@ -1,8 +1,4 @@
-// window.onload = function () {
-//     registrationComplete();
-// }
-
-export function registrationComplete() {
+export function RegistrationComplete() {
  
     var appDiv = document.getElementById('app');
 
