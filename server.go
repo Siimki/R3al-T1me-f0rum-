@@ -1391,18 +1391,35 @@ func formValue(w http.ResponseWriter, r *http.Request) ([]int, error) {
 }
 
 func showMyPostsHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
-	err := r.ParseForm()
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Error parsing form: %v", err), http.StatusBadRequest)
-		return
-	}
+	// err := r.ParseForm()
+	// if err != nil {
+	// 	http.Error(w, fmt.Sprintf("Error parsing form: %v", err), http.StatusBadRequest)
+	// 	return
+	// }
 
-	formValue := r.FormValue("myposts")
+	// formValue := r.FormValue("myposts")
 
+	fmt.Println("[MYPOSTSHANDLER]")
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+	type PostData struct {
+		Categories  string `json:"myposts"`
+	}
+	var postData PostData
+
+// Directly decode the JSON body
+		err := json.NewDecoder(r.Body).Decode(&postData)
+		if err != nil {
+			fmt.Println("[CREATEPOST]", err)
+			http.Error(w, "Bad request", http.StatusBadRequest)
+			return
+		}
+		defer r.Body.Close()
+
+	fmt.Println("PostData", postData)
+	fmt.Println("content:", postData.Categories)
 
 	userSession, _ := helpers.ValidateSessionFromCookie(w, r)
 	var username string
@@ -1412,7 +1429,7 @@ func showMyPostsHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		role, _ = helpers.SQLGetUserRole(db, userSession.Username)
 	}
 
-	posts, _ := getPostsFromDatabase(db, formValue, userSession.Username)
+	posts, _ := getPostsFromDatabase(db, postData.Categories, userSession.Username)
 	comments, _ := getCommentsFromDatabase(db)
 
 	posts = addCommentsToPost(posts, comments)
@@ -1424,18 +1441,38 @@ func showMyPostsHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		Posts:    posts,
 		Role:     role,
 	}
-
-	t, err := template.ParseFiles("templates/homepage.html")
 	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
+		// if error exists, mean there is no session and show view page only.
+		var rawMessage = "Usersession is not valid! Proceed to registration page!"
 
-	err = t.Execute(w, data)
-	if err != nil {
-		http.Error(w, "Error executing template", http.StatusInternalServerError)
-		return
+		message, err := json.Marshal(rawMessage)
+		if err != nil {
+			fmt.Printf("Could now marshal data %s\n", err)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(message)
+	} else {
+		//fmt.Println(string(jsonData))
+		jsonData, err := json.Marshal(data)
+		if err != nil {
+			fmt.Printf("Could now marshal data %s\n", err)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(jsonData)
 	}
+	// t, err := template.ParseFiles("templates/homepage.html")
+	// if err != nil {
+	// 	http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	// 	return
+	// }
+
+	// err = t.Execute(w, data)
+	// if err != nil {
+	// 	http.Error(w, "Error executing template", http.StatusInternalServerError)
+	// 	return
+	// }
 }
 
 func deletePostHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {

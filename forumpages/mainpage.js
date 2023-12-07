@@ -4,6 +4,7 @@ import { changeColor } from '/static/changeColor.js';
 import { commentsScript } from '/static/commentsScript.js'; 
 import { likesFunction } from '/static/likesFunction.js';
 import { fetchFilteredPosts } from './filterpages.js';
+import { fetchMyPosts } from './mypostsfilter.js';
 
 
 
@@ -73,8 +74,8 @@ const toggleUserListButton = document.getElementById('toggleUserListBtn')
 toggleUserListButton.style.display = 'block'
 // My Posts form and button
 const myPostsForm = document.createElement('form');
-myPostsForm.action = '/myposts';
-myPostsForm.method = 'post';
+// myPostsForm.action = '/myposts';
+// myPostsForm.method = 'post';
 
 const myPostsBtn = document.createElement('button');
 myPostsBtn.className = 'bg-blue-300 hover:bg-blue-400 border rounded p-2 m-1 transition duration-500';
@@ -83,13 +84,18 @@ myPostsBtn.value = 'myposts';
 myPostsBtn.name = 'myposts';
 myPostsBtn.textContent = 'My posts';
 
+myPostsBtn.addEventListener('click', function(event) {
+  event.preventDefault(); // Prevent the form from submitting traditionally
+  fetchMyPosts('myposts'); // Fetch "My Posts"
+});
+
 myPostsForm.appendChild(myPostsBtn);
 buttonDiv.appendChild(myPostsForm);
 
 // My Liked Posts form and button
 const myLikedPostsForm = document.createElement('form');
-myLikedPostsForm.action = '/myposts';
-myLikedPostsForm.method = 'post';
+// myLikedPostsForm.action = '/myposts';
+// myLikedPostsForm.method = 'post';
 
 const myLikedPostsBtn = document.createElement('button');
 myLikedPostsBtn.className = 'bg-blue-300 hover:bg-blue-400 border rounded p-2 m-1 transition duration-500';
@@ -98,6 +104,14 @@ myLikedPostsBtn.value = 'mylikedposts';
 myLikedPostsBtn.name = 'myposts';
 myLikedPostsBtn.textContent = 'My liked posts';
 
+
+
+myLikedPostsBtn.addEventListener('click', function(event) {
+  event.preventDefault(); // Prevent the form from submitting traditionally
+  fetchMyPosts('mylikedposts'); // Fetch "My Liked Posts"
+});
+
+
 myLikedPostsForm.appendChild(myLikedPostsBtn);
 buttonDiv.appendChild(myLikedPostsForm);
 
@@ -105,9 +119,12 @@ buttonDiv.appendChild(myLikedPostsForm);
 const showAllPostsBtn = document.createElement('button');
 showAllPostsBtn.className = 'bg-blue-300 hover:bg-blue-400 border rounded p-2 m-1 transition duration-500';
 showAllPostsBtn.onclick = function() {
-  window.location.href = 'http://localhost:8080/homepage.html';
+  window.location.href = 'http://localhost:8080#login';
 };
 showAllPostsBtn.textContent = 'Show all posts';
+showAllPostsBtn.addEventListener('click', function(event) {
+  fetchMyPosts("normal")
+})
 
 buttonDiv.appendChild(showAllPostsBtn);
 
