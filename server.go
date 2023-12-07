@@ -504,16 +504,44 @@ func commentDislikeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func filterPage(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("[FILTEREDPAGE]")
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-
-	categories, err := formValue(w, r)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Failed in formValue: %v", err), http.StatusBadRequest)
-		return
+	type PostData struct {
+		Categories  []string `json:"categories"`
 	}
+	var postData PostData
+
+// Directly decode the JSON body
+		err := json.NewDecoder(r.Body).Decode(&postData)
+		if err != nil {
+			fmt.Println("[CREATEPOST]", err)
+			http.Error(w, "Bad request", http.StatusBadRequest)
+			return
+		}
+		defer r.Body.Close()
+
+	fmt.Println("PostData", postData)
+	fmt.Println("content:", postData.Categories)
+		var catergories []int
+	for _, v := range postData.Categories {
+			
+		categorieToAdd, err := strconv.Atoi(v)
+		if err != nil {
+			fmt.Println("atoi problem", err)
+		} 
+		catergories = append(catergories, categorieToAdd)
+	}
+	fmt.Println("Categories before isntert", catergories)
+
+
+	// categories, err := formValue(w, r)
+	// if err != nil {
+	// 	http.Error(w, fmt.Sprintf("Failed in formValue: %v", err), http.StatusBadRequest)
+	// 	return
+	// }
 
 	db, err := helpers.GetDbConnection()
 	if err != nil {
@@ -522,7 +550,7 @@ func filterPage(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	posts, err := filterPosts(db, categories)
+	posts, err := filterPosts(db, catergories)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("failed to filter posts: %v", err), http.StatusInternalServerError)
 		return
@@ -546,21 +574,54 @@ func filterPage(w http.ResponseWriter, r *http.Request) {
 		v.Likes = likesCount
 	}
 
+	// data := HomePageData{
+	// 	Posts: posts,
+	// }
 	data := HomePageData{
-		Posts: posts,
-	}
-	// before i parsed the filteredPage here. Though i think it is actually unnecessary
-	t, err := template.ParseFiles("templates/homepage.html")
-	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
+		// Username:           username,
+		// Usernames:          usernames,
+		Posts:              posts,
+		// Role:               role,
+		// ModerationRequests: moderationRequests,
+		// ReportedRequests:   count,
+		// UsernameId:         usernameId,
+		// Userlist: 			userlist,	
 	}
 
-	err = t.Execute(w, data)
+	//fmt.Println(data)
 	if err != nil {
-		http.Error(w, "Error executing template", http.StatusInternalServerError)
-		return
+		// if error exists, mean there is no session and show view page only.
+		var rawMessage = "Usersession is not valid! Proceed to registration page!"
+
+		message, err := json.Marshal(rawMessage)
+		if err != nil {
+			fmt.Printf("Could now marshal data %s\n", err)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(message)
+	} else {
+		//fmt.Println(string(jsonData))
+		jsonData, err := json.Marshal(data)
+		if err != nil {
+			fmt.Printf("Could now marshal data %s\n", err)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(jsonData)
 	}
+	// before i parsed the filteredPage here. Though i think it is actually unnecessary
+	// t, err := template.ParseFiles("templates/homepage.html")
+	// if err != nil {
+	// 	http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	// 	return
+	// }
+
+	// err = t.Execute(w, data)
+	// if err != nil {
+	// 	http.Error(w, "Error executing template", http.StatusInternalServerError)
+	// 	return
+	// }
 }
 
 func addCommentsToPost(posts []Post, comments []Comment) (modPosts []Post) {
@@ -727,70 +788,97 @@ func addComment(w http.ResponseWriter, r *http.Request) {
 	//incase we try to pass the postID 
 
 }
+	// (w).Header().Set("Access-Control-Allow-Origin", "*") // or a specific domain
+    // (w).Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+    // (w).Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+	// if r.Method != http.MethodPost {
+	// 	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	// 	return
+	// }
+	// type PostData struct {
+    //     PostContent string   `json:"postContent"`
+    //     Categories  []string `json:"categories"`
+    // }
+    // body, err := ioutil.ReadAll(r.Body)
+    // if err != nil {
+    //     // handle error
+    //     http.Error(w, "Error reading request body", http.StatusInternalServerError)
+    //     return
+    // }
 
-func createPost(w http.ResponseWriter, r *http.Request, db *sql.DB) {
-	(w).Header().Set("Access-Control-Allow-Origin", "*") // or a specific domain
-    (w).Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-    (w).Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-	type PostData struct {
-        PostContent string   `json:"content"`
-        Categories  []string `json:"categories"`
-    }
-    body, err := ioutil.ReadAll(r.Body)
-    if err != nil {
-        // handle error
-        http.Error(w, "Error reading request body", http.StatusInternalServerError)
-        return
-    }
+    // // Don't forget to close the body when you're done with it
+    // defer r.Body.Close()
 
-    // Don't forget to close the body when you're done with it
-    defer r.Body.Close()
+    // // Convert the body to a string for printing
+    // bodyString := string(body)
+    // fmt.Println(bodyString)
+	// var postData PostData
+	//     // Decode the JSON body
+	// 	err = json.NewDecoder(r.Body).Decode(&postData)
+	// 	if err != nil {
+	// 		fmt.Println("[CREATEPOST]", err)
+	// 		fmt.Println(r.Body)
+	// 		http.Error(w, "Bad request", http.StatusBadRequest)
+	// 		return
+	// 	}
+	func createPost(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+		fmt.Println("createPost got called")
 
-    // Convert the body to a string for printing
-    bodyString := string(body)
-    fmt.Println(bodyString)
-	var postData PostData
-	    // Decode the JSON body
-		err = json.NewDecoder(r.Body).Decode(&postData)
-		if err != nil {
-			fmt.Println("[CREATEPOST ]", err)
-			fmt.Println(r.Body)
-			http.Error(w, "Bad request", http.StatusBadRequest)
+			(w).Header().Set("Access-Control-Allow-Origin", "*") // or a specific domain
+		(w).Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		(w).Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
-
-	categories, err := formValue(w, r)
-	if err != nil {
-		fmt.Println("[createPostHandler]", err)
-		http.Error(w, "Failed in formValue", http.StatusBadRequest)
-		return
-	}
-
-
-
-	userSession, _ := helpers.ValidateSessionFromCookie(w, r)
-
-	userID := helpers.SQLSelectUserID(db, userSession.Username)
-	if postData.PostContent != "" {
-		if err := helpers.SQLInsertPost(db, postData.PostContent, userID); err != nil {
-			http.Error(w, "failed to insert post: %w", http.StatusBadRequest)
+		type PostData struct {
+			PostContent string   `json:"content"`
+			Categories  []string `json:"categories"`
 		}
-	} else {
-		http.Error(w, "Creating empty post is forbidden.", http.StatusBadRequest)
-	}
-	postID, err := helpers.SQLLastPostID(db)
-	if err != nil {
-		http.Error(w, "Failed to get last post ID", http.StatusInternalServerError)
-		return
-	}
-	helpers.SQLInsertCategorie(db, postID, categories)
+	    var postData PostData
 
-	// http.Redirect(w, r, "homepage.html", http.StatusSeeOther)
-}
+    // Directly decode the JSON body
+			err := json.NewDecoder(r.Body).Decode(&postData)
+			if err != nil {
+				fmt.Println("[CREATEPOST]", err)
+				http.Error(w, "Bad request", http.StatusBadRequest)
+				return
+			}
+			defer r.Body.Close()
+
+		fmt.Println("PostData", postData)
+		fmt.Println("content:", postData.PostContent)
+
+		userSession, _ := helpers.ValidateSessionFromCookie(w, r)
+		fmt.Println("[CREATEPOST][Usersession.Username]",userSession.Username)
+		userID := helpers.SQLSelectUserID(db, userSession.Username)
+		if postData.PostContent != "" {
+			if err := helpers.SQLInsertPost(db, postData.PostContent, userID); err != nil {
+				http.Error(w, "failed to insert post: %w", http.StatusBadRequest)
+			}
+		} else {
+			http.Error(w, "Creating empty post is forbidden.", http.StatusBadRequest)
+		}
+		postID, err := helpers.SQLLastPostID(db)
+		if err != nil {
+			http.Error(w, "Failed to get last post ID", http.StatusInternalServerError)
+			return
+		}
+		var catergories []int
+		for _, v := range postData.Categories {
+			
+			categorieToAdd, err := strconv.Atoi(v)
+			if err != nil {
+				fmt.Println("atoi problem", err)
+			} 
+			catergories = append(catergories, categorieToAdd)
+		}
+		fmt.Println("Categories before isntert", catergories)
+		helpers.SQLInsertCategorie(db, postID, catergories)
+	
+		// http.Redirect(w, r, "homepage.html", http.StatusSeeOther)
+	}
 
 func serveCreatePostPage(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {

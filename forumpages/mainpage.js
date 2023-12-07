@@ -3,11 +3,12 @@ import { displayComments } from '/static/displayComments.js';
 import { changeColor } from '/static/changeColor.js'; 
 import { commentsScript } from '/static/commentsScript.js'; 
 import { likesFunction } from '/static/likesFunction.js';
+import { fetchFilteredPosts } from './filterpages.js';
 
 
 
 
-export async function mainPage() {
+export async function mainPage(data) {
     if (!data) {
         console.log("data not exist, start fetch")
          var data2 = await fetchDataFromServer();
@@ -15,6 +16,7 @@ export async function mainPage() {
     if (!data) {
       data = data2
     }
+
     const body = document.getElementById('body');
     body.className = 'bg-gray-100';
   console.log("This is ducked")
@@ -160,8 +162,24 @@ appDiv.appendChild(buttonDiv);
 //filteredPosts form 
 // Create the filtered posts form
 const filteredPostsForm = document.createElement('form');
-filteredPostsForm.action = '/filterpage';
-filteredPostsForm.method = 'post';
+filteredPostsForm.addEventListener('submit', function(event) {
+  event.preventDefault(); // Prevent the form from submitting in the traditional way
+
+  // Collect the selected checkbox values
+  let selectedGames = [];
+  games.forEach(game => {
+      const checkbox = document.getElementById(game.id);
+      if (checkbox.checked) {
+          selectedGames.push(checkbox.value);
+      }
+  });
+
+  // Call a function to handle fetching the filtered data
+  fetchFilteredPosts(selectedGames);
+});
+//in progress
+// filteredPostsForm.action = '/filterpage';
+// filteredPostsForm.method = 'post';
 
 // Create the container div for the checkboxes and button
 const filterContainerDiv = document.createElement('div');

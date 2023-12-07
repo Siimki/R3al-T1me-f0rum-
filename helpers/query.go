@@ -22,8 +22,6 @@ type Userlist struct {
 	Username string `json:"username"`
 }
 
-
-
 func GetUsernamesIds(db *sql.DB,  senderIdInt int) ([]Userlist, error) {
     // Define the SQL query for fetching all usernames and IDs
 	senderId := strconv.Itoa(senderIdInt) 
@@ -112,8 +110,6 @@ func GetPrivateMessages(db *sql.DB, senderUsername string, readerUsername string
 				return nil , fmt.Errorf("Failed after iterating rows: %v", err)
 			}
 
-
-
 			fmt.Println("This is length of private Messages inside the SQL func:\n", len(privateMessages))
 			return privateMessages, nil
 		}	
@@ -126,7 +122,6 @@ func GetUsernames(db *sql.DB, senderIdInt int) (usernames []string, err error) {
 //	regularQueryForUser := "SELECT username FROM users ORDER BY UPPER(username);"
 	senderId := strconv.Itoa(senderIdInt) 
 
-	
 	queryForActiveUser :=
 	`SELECT 
     u.username
@@ -185,7 +180,9 @@ func SQLAuthorize(w http.ResponseWriter, r *http.Request, db *sql.DB, username s
 }
 
 func CountSQL(db *sql.DB, status string, username string) (count int, err error) {
+
 	switch status {
+		
 	case "reportedRequests":
 		err = db.QueryRow("SELECT COUNT (*) FROM posts WHERE flagged = 1;").Scan(&count)
 		if err != nil {
@@ -261,7 +258,6 @@ func InitalizeDb(username string, password string, email string, role string, ap
 	}
 
 	if err := InsertUser(db, username, password, email, role, apply, firstName, lastName, gender, age); err != nil {
-		//fmt.Println("000", email, "000", password, username)
 		return fmt.Errorf("failed to insert user: %w", err)
 	}
 

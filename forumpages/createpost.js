@@ -61,9 +61,8 @@ export function createPost() {
         postFormContainer.className = 'relative bg-gray-300';
 
         var postForm = document.createElement('form');
+        postForm.id = 'postForm'
         postForm.className = 'bg-gray-300 m-3';
-        postForm.action = '/submitpost';
-        postForm.method = 'post';
 
 
         // Function to create checkbox inputs
@@ -104,31 +103,30 @@ export function createPost() {
         postSubmitButton.className = 'bg-blue-300 hover:bg-blue-400 border rounded m-2 px-2 transition duration-500';
         postSubmitButton.type = 'submit';
         postSubmitButton.textContent = 'Post';
+      //  postSubmitButton.href = "http://localhost:8080/#login";
+
         postForm.appendChild(postSubmitButton);
         postFormContainer.appendChild(postForm);
         postSubmissionArea.appendChild(postFormContainer);
         body.appendChild(postSubmissionArea);
 
-        // Get the content of the post
-        document.getElementById("postSubmitButton").addEventListener("click", function(event){
 
+        document.getElementById('postForm').addEventListener('submit', function(event) {
+            console.log("postsubmitbutton got called")
             event.preventDefault();
+        //    window.location.href = "http://localhost:8080/#login"
             var postContent = document.getElementById("postContent").value;
-            var categories2 = [];
-            document.querySelectorAll('input[type="category"]:checked').forEach(function(checkbox) {
-                var match = string(checkbox.value).match(/\d+/); // Regular expression to find numbers
-                if (match) {
-                    categories2.push(match[0]); // Add the first number found
-                }
-                    console.log(categories2); // Should display something like ["2"] if 'runescape' is checked
+            var categories = [];
+            document.querySelectorAll('input[type="checkbox"]:checked').forEach(function(checkbox) {
+                categories.push(checkbox.value);
             });
-        
+            
             var postData = {
-                content: "kaka",
-                categories: categories2
+                content: postContent,
+                categories: categories
             };
         
-            feth("/submitpost", {
+            fetch("/submitpost", {
                 method: "POST",
                 body: JSON.stringify(postData),
                 headers: {
@@ -138,17 +136,17 @@ export function createPost() {
             .then((response) => {
                 if (response.ok) {
                     console.log("Post added successfully!");
-                    setTimeout(function () {
-                        window.location.href = "http://localhost:8080/#login";
-                    }, 3000);
+                    window.location.href = "http://localhost:8080/#login";
                 } else {
                     console.error("Error adding post");
+                    alert("Error adding post ")
                 }
             })
             .catch((error) => {
                 console.error("Error:", error);
             });
         });
+        
         
 
         // Continue creating and appending other elements...
