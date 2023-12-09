@@ -448,7 +448,17 @@ function createUserList() {
   const userListContainer = document.getElementById('userList')
   // Clear out current list
   userListContainer.innerHTML = '';
+
   // Create user list items
+  const userlistHeader = document.createElement('div');
+  userlistHeader.innerHTML = 'Private messages'
+  userlistHeader.style.textAlign = 'center'; // Center align the text
+  userlistHeader.style.fontWeight = 'bold'; // Make the text bold
+  userlistHeader.style.marginBottom = '20px'; // Add bottom margin for spacing
+  userListContainer.appendChild(userlistHeader)
+
+
+
   data.Userlist.forEach(user => {
     const userItem = document.createElement('div');
     userItem.classList.add('user-list-item', 'chatboxToggle');

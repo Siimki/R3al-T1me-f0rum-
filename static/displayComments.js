@@ -2,7 +2,6 @@ export function displayComments() {
     // Your code for setting up comment toggling
     document.addEventListener('click', function(event) {
         // Check if the clicked element has the .comments-toggler class
-        console.log("Display comments!")
         if (event.target.classList.contains('comments-toggler')) {
             console.log("Here i display comment")
             const postId = event.target.dataset.postId;

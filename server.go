@@ -573,19 +573,16 @@ func filterPage(w http.ResponseWriter, r *http.Request) {
 		}
 		v.Likes = likesCount
 	}
-
-	// data := HomePageData{
-	// 	Posts: posts,
-	// }
+	rawData := parsingHomePageData(w, r, db)
 	data := HomePageData{
-		// Username:           username,
-		// Usernames:          usernames,
+		 Username:           rawData.Username,
+		 Usernames:          rawData.Usernames,
 		Posts:              posts,
 		// Role:               role,
 		// ModerationRequests: moderationRequests,
 		// ReportedRequests:   count,
-		// UsernameId:         usernameId,
-		// Userlist: 			userlist,	
+		 UsernameId:         rawData.UsernameId,
+		 Userlist: 			rawData.Userlist,	
 	}
 
 	//fmt.Println(data)
@@ -949,7 +946,51 @@ func likesToPostsAndComments(db *sql.DB, posts []Post) error {
 
 	return nil
 }
+func parsingHomePageData(w http.ResponseWriter, r *http.Request, db *sql.DB) (data HomePageData){
+	userlist, err := helpers.GetUsernamesIds(db, 1)
+	if err != nil {
+		fmt.Println("[ERROR]", err)
+	}
+	fmt.Println("[USERLIST]", userlist)
+	userSession, err := helpers.ValidateSessionFromCookie(w, r)
+	var username string
+	var role string
+	var moderationRequests []string
+	var count int
+	if userSession != nil {
+		username = userSession.Username
+		role, err = helpers.SQLGetUserRole(db, userSession.Username)
+		if err != nil {
+			fmt.Println("Failed to get role")
+		}
+		moderationRequests, _ = helpers.SQLSelectModeratorRequest(db, false)
+		count, err = helpers.CountSQL(db, "reportedRequests", "")
+	} else {
+		fmt.Println("This is usersession in dataparse \n", userSession)
+		fmt.Println("This is error", err)
+	}
 
+	usernameId, err := helpers.GetUserID(username)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	usernames, err := helpers.GetUsernames(db, usernameId)
+	if err != nil {
+		fmt.Println("This is error:", err)
+	}
+	//no posts
+	data = HomePageData{
+		Username:           username,
+		Usernames:          usernames,
+		Role:               role,
+		ModerationRequests: moderationRequests,
+		ReportedRequests:   count,
+		UsernameId:         usernameId,
+		Userlist: 			userlist,	
+	}
+	return 
+}
 func homePageHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	// if r.Method != http.MethodGet {
 	// 	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -1462,17 +1503,7 @@ func showMyPostsHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(jsonData)
 	}
-	// t, err := template.ParseFiles("templates/homepage.html")
-	// if err != nil {
-	// 	http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-	// 	return
-	// }
 
-	// err = t.Execute(w, data)
-	// if err != nil {
-	// 	http.Error(w, "Error executing template", http.StatusInternalServerError)
-	// 	return
-	// }
 }
 
 func deletePostHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
