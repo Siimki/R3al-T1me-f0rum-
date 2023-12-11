@@ -4,11 +4,11 @@
 
 import { RegistrationComplete } from "./registered.js";
 
-var data = null
+var data = null;
 
 export async function loadRegistrationForm() {
-    var appDiv = document.getElementById('app');
-    var registrationForm = `
+  var appDiv = document.getElementById("app");
+  var registrationForm = `
     <h1 class="text-2xl font-bold mb-8 text-center">Registration Form</h1>
     <form action="/register" method="post" class="space-y-4">
     <div>
@@ -46,12 +46,13 @@ export async function loadRegistrationForm() {
     <span class="block text-sm font-semibold mb-2">Gender:</span>
     <div class="flex items-center mb-2">
         <input type="radio" id="male" name="gender" value="male" required class="mr-2">
-        <label for="male" class="mr-4">Male  </label>
+        <label for="male" class="mr-2">Male</label>
 
         <input type="radio" id="female" name="gender" value="female" required class="mr-2">
         <label for="female">Female</label>
     </div>
     </div>
+    
 
     <div>
         <input type="submit" value="Register" class="block w-full p-2 text-white bg-blue-600 rounded-md cursor-pointer">
@@ -75,118 +76,111 @@ export async function loadRegistrationForm() {
         </div>
     </form>
     `;
-    
-    appDiv.innerHTML = registrationForm;
 
-    var regForm = document.querySelector('form[action="/register"]');
-    regForm.addEventListener('submit', async function(event) {
-        event.preventDefault();
+  appDiv.innerHTML = registrationForm;
 
-        var formData = new FormData(regForm);
-        var object = {};
-        formData.forEach(function(value, key) {
-            object[key] = value;
-        });
-        var json = JSON.stringify(object);
-    
-        console.log(json, "this is form data in JSON");
-    
-        // send AJAX request
-        try {
-            const response = await fetch('/register', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: json
-            });
-    
-            const data = await response.json();
-    
-            if (data.Success) {
-                loadPage('registered');
-            } else {
-                alert(data.Message);
-                RegistrationComplete()
-            }
-        } catch (error) {
-            console.error('There was an error with the registration', error);
-        }
+  var regForm = document.querySelector('form[action="/register"]');
+  regForm.addEventListener("submit", async function (event) {
+    event.preventDefault();
 
+    var formData = new FormData(regForm);
+    var object = {};
+    formData.forEach(function (value, key) {
+      object[key] = value;
     });
+    var json = JSON.stringify(object);
 
-    var loginForm = document.querySelector('form[action="/login"]')
+    console.log(json, "this is form data in JSON");
 
-    loginForm.addEventListener('submit', async function(event) {
+    // send AJAX request
+    try {
+      const response = await fetch("/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: json,
+      });
 
-        event.preventDefault();
-        console.log("come here?")
-        try {
-            await loginHandler();
-        } catch (error) {
-            console.error('Error during login', error);
-        }
+      const data = await response.json();
 
-    });
-    
-  
+      if (data.Success) {
+        loadPage("registered");
+      } else {
+        alert(data.Message);
+        RegistrationComplete();
+      }
+    } catch (error) {
+      console.error("There was an error with the registration", error);
+    }
+  });
+
+  var loginForm = document.querySelector('form[action="/login"]');
+
+  loginForm.addEventListener("submit", async function (event) {
+    event.preventDefault();
+    console.log("come here?");
+    try {
+      await loginHandler();
+    } catch (error) {
+      console.error("Error during login", error);
+    }
+  });
 }
 
 export async function loginHandler() {
-    let username = document.getElementById('login-username').value;
-    let password = document.getElementById('login-password').value;
-    console.log(username, password,"it was username and password")
-    try {
-        console.log(username, password,"it was username and password")
+  let username = document.getElementById("login-username").value;
+  let password = document.getElementById("login-password").value;
+  console.log(username, password, "it was username and password");
+  try {
+    console.log(username, password, "it was username and password");
 
-        const response = await fetch('/login', {
-            
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                'login-username': username,
-                'login-password': password
-            })
-        });
+    const response = await fetch("/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        "login-username": username,
+        "login-password": password,
+      }),
+    });
 
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-
-        data = await response.json();
-        console.log(data," this is the data");
-        console.log(data.Username, "this is username")
-        window.location.hash = "#login";
-    } catch (error) {
-        console.error('There was an error fetching the login data', error);
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
     }
+
+    data = await response.json();
+    console.log(data, " this is the data");
+    console.log(data.Username, "this is username");
+    window.location.hash = "#login";
+  } catch (error) {
+    console.error("There was an error fetching the login data", error);
+  }
 }
 
 export async function fetchDataFromServer() {
-    try {
-        const response = await fetch('/homepage', {
-            
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
+  try {
+    const response = await fetch("/homepage", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
 
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-
-        data = await response.json();
-        console.log(data," this is the data");
-        console.log(data.Username, "this is username")
-        window.location.hash = "#login";
-    } catch (error) {
-        console.error('There was an error fetching the login data', error);
-        window.location.hash = "#registration";
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
     }
-    return data
+
+    data = await response.json();
+    console.log(data, " this is the data");
+    console.log(data.Username, "this is username");
+    window.location.hash = "#login";
+  } catch (error) {
+    console.error("There was an error fetching the login data", error);
+    window.location.hash = "#registration";
+  }
+  return data;
 }
 
 export { data };
