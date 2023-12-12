@@ -125,15 +125,19 @@ export async function loadRegistrationForm() {
     } catch (error) {
       console.error("Error during login", error);
     }
+    document.getElementById("error-message").style.display = "block";
+    document.getElementById("error-message").innerText =
+      "Invalid Username or Password";
   });
 }
 
 export async function loginHandler() {
   let username = document.getElementById("login-username").value;
   let password = document.getElementById("login-password").value;
-  console.log(username, password, "it was username and password");
+  // console.log(username, password, "it was username and password");
   try {
-    console.log(username, password, "it was username and password");
+    console.log(username, "it was username");
+    console.log(password, "it was password");
 
     const response = await fetch("/login", {
       method: "POST",
