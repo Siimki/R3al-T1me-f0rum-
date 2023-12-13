@@ -60,7 +60,7 @@ export async function loadRegistrationForm() {
 
     </form>
 
-    <h2 class="text-2xl font-bold my-8 text-center">Log in Form</h2>
+    <h2 class="text-2xl font-bold my-8 text-center">Login Form</h2>
     <form action="/login" method="post" class="space-y-4">
         <div class= "text-center" id="error-message" style="display: none;"></div>
         <div>
