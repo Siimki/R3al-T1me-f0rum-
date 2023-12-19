@@ -90,7 +90,6 @@ export async function loadRegistrationForm() {
     });
     var json = JSON.stringify(object);
 
-    console.log(json, "this is form data in JSON");
 
     // send AJAX request
     try {
@@ -119,7 +118,6 @@ export async function loadRegistrationForm() {
 
   loginForm.addEventListener("submit", async function (event) {
     event.preventDefault();
-    console.log("come here?");
     try {
       await loginHandler();
     } catch (error) {
@@ -134,10 +132,7 @@ export async function loadRegistrationForm() {
 export async function loginHandler() {
   let username = document.getElementById("login-username").value;
   let password = document.getElementById("login-password").value;
-  // console.log(username, password, "it was username and password");
   try {
-    console.log(username, "it was username");
-    console.log(password, "it was password");
 
     const response = await fetch("/login", {
       method: "POST",
@@ -155,8 +150,7 @@ export async function loginHandler() {
     }
 
     data = await response.json();
-    console.log(data, " this is the data");
-    console.log(data.Username, "this is username");
+
     window.location.hash = "#login";
   } catch (error) {
     console.error("There was an error fetching the login data", error);
@@ -177,8 +171,7 @@ export async function fetchDataFromServer() {
     }
 
     data = await response.json();
-    console.log(data, " this is the data");
-    console.log(data.Username, "this is username");
+
     window.location.hash = "#login";
   } catch (error) {
     console.error("There was an error fetching the login data", error);

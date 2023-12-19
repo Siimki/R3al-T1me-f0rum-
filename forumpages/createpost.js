@@ -84,7 +84,6 @@ export function createPost() {
             checkbox.id = id;
             checkbox.name = id;
             checkbox.value = val;
-            console.log("i addded val", val)
             var checkboxLabel = document.createElement('label');
             checkboxLabel.htmlFor = id;
             checkboxLabel.textContent = label;
@@ -124,7 +123,6 @@ export function createPost() {
 
 
         document.getElementById('postForm').addEventListener('submit', function(event) {
-            console.log("postsubmitbutton got called")
             event.preventDefault();
         //    window.location.href = "http://localhost:8080/#login"
             var postContent = document.getElementById("postContent").value;

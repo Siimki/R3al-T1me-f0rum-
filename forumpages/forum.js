@@ -11,7 +11,6 @@ const routes = {
 function loadPageFromHash() {
   const hash = window.location.hash || "#registration"; // Default to registration page
   const pageModule = routes[hash];
-  console.log("Calling loadPageFromHash", hash)
 
   if (pageModule) {
     import(pageModule).then((module) => {
@@ -30,6 +29,9 @@ function loadPageFromHash() {
           break;
         case "#createpost":
           module.createPost();
+          break;
+        case "#logout":
+          module.logout();
           break;
         // ... other cases ...
       }

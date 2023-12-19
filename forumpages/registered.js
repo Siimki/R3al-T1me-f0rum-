@@ -10,7 +10,6 @@ export function RegistrationComplete() {
         `;
     
     appDiv.innerHTML = content;
-    console.log("do i get called_")
     setTimeout(function() {
         window.location.href = '/';
     }, 1000);

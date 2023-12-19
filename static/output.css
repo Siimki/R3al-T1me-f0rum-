@@ -1163,13 +1163,23 @@ video {
 
 #toggleUserListBtn {
   position: fixed;
-  display: none;
-  left: 0;
-  top: 50;
-  z-index: 10; /* Ensure it's above the user list */
-  /* Add more styling as needed */
+  left: 10px; /* Adjust as necessary */
+  top: 3%; /* Centered vertically */
+  transform: translateY(-50%); /* Adjust position for centering */
+  z-index: 1000; /* Ensure it's above other elements */
+  cursor: pointer; /* Changes the cursor to a pointer to indicate it's clickable */
+  padding: 10px 15px; /* Padding for better touch area and appearance */
+  background-color: #4CAF50; /* Green background for visibility */
+  color: white; /* White text */
+  border: none; /* Removes default border */
+  border-radius: 5px; /* Rounded corners for a modern look */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Subtle shadow for depth */
+  transition: background-color 0.3s; /* Smooth transition for hover effect */
 }
 
+#toggleUserListBtn:hover {
+  background-color: #45a049; /* Slightly darker green when hovered */
+}
 /* #messages {
   display: flex;
   flex-direction: column;

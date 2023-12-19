@@ -127,7 +127,7 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	username := r.URL.Query().Get("username")
 	limit := r.URL.Query().Get("limit")
 	offset := r.URL.Query().Get("offset")
-	fmt.Println("this is username, limit and offset from URL", username, limit, offset)
+	// fmt.Println("this is username, limit and offset from URL", username, limit, offset)
 	// clients[username] = ws 
 	clients[username] = Client{username, ws}
 
@@ -269,7 +269,6 @@ func notifyUserStatus(username string, online bool) {
 }
 
 func liteMesssageHandler(msg string, senderName string, receiver string, db *sql.DB) (err error ) {
-	fmt.Println("log litemessagehandler")
 
 	  senderUserId, err := helpers.GetUserID(senderName)
 	  if err != nil {
@@ -294,8 +293,6 @@ func getMessageHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
     // Parse query parameters
     senderUsername := r.URL.Query().Get("senderusername")
     receiverUsername := r.URL.Query().Get("receiverusername")
-    // limitStr := r.URL.Query().Get("limit")
-    // offsetStr := r.URL.Query().Get("offset")
 
     // Convert limit and offset to integers
 	pageStr := r.URL.Query().Get("page")
@@ -306,13 +303,6 @@ func getMessageHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 
     const limit = 10
     offset := (page - 1) * limit
-
-    // offset, err = strconv.Atoi(offsetStr)
-    // if err != nil {
-    //     fmt.Println("Error converting offset:", err)
-    //     http.Error(w, "Invalid offset", http.StatusBadRequest)
-    //     return
-    // }
 
     // Fetch messages
     privateMessages, err := helpers.GetPrivateMessages(db, senderUsername, receiverUsername, limit, offset)
@@ -339,7 +329,7 @@ func getMessageHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 
 
 func messageHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
-	fmt.Println("do i get called")
+
 	var msg struct {
 		Message  string `json:"message"`
 		SenderUsername string `json:"senderusername"`
@@ -504,7 +494,6 @@ func commentDislikeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func filterPage(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("[FILTEREDPAGE]")
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -523,8 +512,6 @@ func filterPage(w http.ResponseWriter, r *http.Request) {
 		}
 		defer r.Body.Close()
 
-	fmt.Println("PostData", postData)
-	fmt.Println("content:", postData.Categories)
 		var catergories []int
 	for _, v := range postData.Categories {
 			
@@ -534,14 +521,6 @@ func filterPage(w http.ResponseWriter, r *http.Request) {
 		} 
 		catergories = append(catergories, categorieToAdd)
 	}
-	fmt.Println("Categories before isntert", catergories)
-
-
-	// categories, err := formValue(w, r)
-	// if err != nil {
-	// 	http.Error(w, fmt.Sprintf("Failed in formValue: %v", err), http.StatusBadRequest)
-	// 	return
-	// }
 
 	db, err := helpers.GetDbConnection()
 	if err != nil {
@@ -577,15 +556,11 @@ func filterPage(w http.ResponseWriter, r *http.Request) {
 	data := HomePageData{
 		 Username:           rawData.Username,
 		 Usernames:          rawData.Usernames,
-		Posts:              posts,
-		// Role:               role,
-		// ModerationRequests: moderationRequests,
-		// ReportedRequests:   count,
+		 Posts:              posts,
 		 UsernameId:         rawData.UsernameId,
-		 Userlist: 			rawData.Userlist,	
+		 Userlist: 			 rawData.Userlist,	
 	}
 
-	//fmt.Println(data)
 	if err != nil {
 		// if error exists, mean there is no session and show view page only.
 		var rawMessage = "Usersession is not valid! Proceed to registration page!"
@@ -598,7 +573,6 @@ func filterPage(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(message)
 	} else {
-		//fmt.Println(string(jsonData))
 		jsonData, err := json.Marshal(data)
 		if err != nil {
 			fmt.Printf("Could now marshal data %s\n", err)
@@ -607,18 +581,7 @@ func filterPage(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(jsonData)
 	}
-	// before i parsed the filteredPage here. Though i think it is actually unnecessary
-	// t, err := template.ParseFiles("templates/homepage.html")
-	// if err != nil {
-	// 	http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-	// 	return
-	// }
 
-	// err = t.Execute(w, data)
-	// if err != nil {
-	// 	http.Error(w, "Error executing template", http.StatusInternalServerError)
-	// 	return
-	// }
 }
 
 func addCommentsToPost(posts []Post, comments []Comment) (modPosts []Post) {
@@ -703,7 +666,6 @@ func admin(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 }
 
 func submitComment(w http.ResponseWriter, r *http.Request, db *sql.DB) {
-	fmt.Println("SubmitComment got called")
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -729,15 +691,12 @@ func submitComment(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	 // Extract post ID and comment from the JSON request body
 	 postID := requestBody.PostID
 	 comment := requestBody.Comment
-	fmt.Printf("the comment inside submitComment is: %v \n", comment)
 	if postID == "" {
         http.Error(w, "Missing post ID", http.StatusBadRequest)
         fmt.Println("Post ID is missing, post ID is:", postID, "the comment is:", comment)
         return
     }
 
-    fmt.Printf("The comment inside submitComment is: %v\n", comment)
-	fmt.Println("The post ID is", postID)
 
     if comment == "" {
         http.Error(w, "Creating empty comment is forbidden.", http.StatusBadRequest)
@@ -755,7 +714,6 @@ func submitComment(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 
 func addComment(w http.ResponseWriter, r *http.Request) {
 
-	fmt.Println("addComment got called!")
 
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed: func addComment", http.StatusMethodNotAllowed)
@@ -774,54 +732,10 @@ func addComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// t, err := template.ParseFiles("templates/addcomment.html")
-	// if err != nil {
-	// 	http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-	// 	return
-	// }
 
-	// err = t.Execute(w, postID)
-	// if err != nil {
-	// 	http.Error(w, "Error executing template", http.StatusInternalServerError)
-	// 	return
-	// }
-
-	//incase we try to pass the postID 
 
 }
-	// (w).Header().Set("Access-Control-Allow-Origin", "*") // or a specific domain
-    // (w).Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-    // (w).Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-	// if r.Method != http.MethodPost {
-	// 	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-	// 	return
-	// }
-	// type PostData struct {
-    //     PostContent string   `json:"postContent"`
-    //     Categories  []string `json:"categories"`
-    // }
-    // body, err := ioutil.ReadAll(r.Body)
-    // if err != nil {
-    //     // handle error
-    //     http.Error(w, "Error reading request body", http.StatusInternalServerError)
-    //     return
-    // }
 
-    // // Don't forget to close the body when you're done with it
-    // defer r.Body.Close()
-
-    // // Convert the body to a string for printing
-    // bodyString := string(body)
-    // fmt.Println(bodyString)
-	// var postData PostData
-	//     // Decode the JSON body
-	// 	err = json.NewDecoder(r.Body).Decode(&postData)
-	// 	if err != nil {
-	// 		fmt.Println("[CREATEPOST]", err)
-	// 		fmt.Println(r.Body)
-	// 		http.Error(w, "Bad request", http.StatusBadRequest)
-	// 		return
-	// 	}
 	func createPost(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		fmt.Println("createPost got called")
 
@@ -848,11 +762,8 @@ func addComment(w http.ResponseWriter, r *http.Request) {
 			}
 			defer r.Body.Close()
 
-		fmt.Println("PostData", postData)
-		fmt.Println("content:", postData.PostContent)
 
 		userSession, _ := helpers.ValidateSessionFromCookie(w, r)
-		fmt.Println("[CREATEPOST][Usersession.Username]",userSession.Username)
 		userID := helpers.SQLSelectUserID(db, userSession.Username)
 		if postData.PostContent != "" {
 			if err := helpers.SQLInsertPost(db, postData.PostContent, userID); err != nil {
@@ -875,7 +786,6 @@ func addComment(w http.ResponseWriter, r *http.Request) {
 			} 
 			catergories = append(catergories, categorieToAdd)
 		}
-		fmt.Println("Categories before isntert", catergories)
 		helpers.SQLInsertCategorie(db, postID, catergories)
 	
 		// http.Redirect(w, r, "homepage.html", http.StatusSeeOther)
@@ -896,8 +806,6 @@ func logOutHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	helpers.DeleteCookie(w, r)
-
-	http.ServeFile(w, r, "templates/logout.html")
 }
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
@@ -955,7 +863,6 @@ func parsingHomePageData(w http.ResponseWriter, r *http.Request, db *sql.DB) (da
 	if err != nil {
 		fmt.Println("[ERROR]", err)
 	}
-	fmt.Println("[USERLIST]", userlist)
 	userSession, err := helpers.ValidateSessionFromCookie(w, r)
 	var username string
 	var role string
@@ -996,10 +903,6 @@ func parsingHomePageData(w http.ResponseWriter, r *http.Request, db *sql.DB) (da
 	return 
 }
 func homePageHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
-	// if r.Method != http.MethodGet {
-	// 	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-	// 	return
-	// }
 
 	//i had to outcomment it because i am calling this handler from another handler
 
@@ -1011,7 +914,6 @@ func homePageHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	if err != nil {
 		fmt.Println("[ERROR]", err)
 	}
-	fmt.Println("[USERLIST]", userlist)
 	
 
 	userSession, err := helpers.ValidateSessionFromCookie(w, r)
@@ -1054,9 +956,6 @@ func homePageHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		Userlist: 			userlist,	
 	}
 
-	fmt.Println("HomepageHandler got called!")
-	//fmt.Println(data)
-
 	if err != nil {
 		// if error exists, mean there is no session and show view page only.
 		var rawMessage = "Usersession is not valid! Proceed to registration page!"
@@ -1082,7 +981,6 @@ func homePageHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 }
 
 func registerHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("[RegisterHandler]: Start registering")
 	var response struct {
 		Success bool   `json:"success"`
 		Message string `json:"message"`
@@ -1134,17 +1032,10 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
     ageString := requestData.Age
     gender := requestData.Gender
 
-	body := r.FormValue("body")
-	fmt.Println("abybody_", body)
-	//username := r.FormValue("username")
-	//passwordRaw := r.FormValue("password")
 	cryptedPassword, err := helpers.PasswordCrypter(password2)
 	if err != nil {
 		http.Error(w, "Failed to hash password", http.StatusInternalServerError)
 	}
-	email := r.FormValue("email")
-	//appliesForModerator := r.FormValue("checkbox")
-	fmt.Println(username2, password2, email, "empty?")
 
 	var apply int
 
@@ -1175,23 +1066,9 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 	response.Message = "Registration successful"
 	json.NewEncoder(w).Encode(response)
 
-	fmt.Println("success")
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
-	// if r.Method != http.MethodPost {
-	// 	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-	// 	return
-	// }
-	// w.Header().Set("Access-Control-Allow-Origin", "*") // This allows any website to access this API. Adjust as needed for security reasons.
-	// w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-	// w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization")
-
-	// // If it's just an OPTIONS request (pre-flight), then just return with an OK status.
-	// if r.Method == "OPTIONS" {
-	//     w.WriteHeader(http.StatusOK)
-	//     return
-	// }
 
 	var requestData map[string]string
 	err := json.NewDecoder(r.Body).Decode(&requestData)
@@ -1207,11 +1084,9 @@ func loginHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		http.Error(w, "Error parsing form", http.StatusBadGateway)
 		return
 	}
-	fmt.Println("Inside loginhandler2")
 
 	usernameOrEmail := requestData["login-username"]
 	password := requestData["login-password"]
-	fmt.Println("this is password", password, usernameOrEmail)
 	row := db.QueryRow("SELECT password FROM users WHERE username = ? OR email = ?;", usernameOrEmail, usernameOrEmail)
 
 	var hashedPassword string
@@ -1228,7 +1103,6 @@ func loginHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	}
 
 	match, _ := helpers.PasswordCheck(password, hashedPassword)
-	fmt.Println("Inside loginhandler3")
 	if match {
 		helpers.CreateSession(w, r, usernameOrEmail)
 		http.Redirect(w, r, "/homepage", http.StatusSeeOther) // Assuming "/home" is the route for the homePageHandler
@@ -1436,15 +1310,7 @@ func formValue(w http.ResponseWriter, r *http.Request) ([]int, error) {
 }
 
 func showMyPostsHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
-	// err := r.ParseForm()
-	// if err != nil {
-	// 	http.Error(w, fmt.Sprintf("Error parsing form: %v", err), http.StatusBadRequest)
-	// 	return
-	// }
 
-	// formValue := r.FormValue("myposts")
-
-	fmt.Println("[MYPOSTSHANDLER]")
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -1454,7 +1320,6 @@ func showMyPostsHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	}
 	var postData PostData
 
-// Directly decode the JSON body
 		err := json.NewDecoder(r.Body).Decode(&postData)
 		if err != nil {
 			fmt.Println("[CREATEPOST]", err)
@@ -1467,13 +1332,6 @@ func showMyPostsHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	fmt.Println("content:", postData.Categories)
 
 	userSession, _ := helpers.ValidateSessionFromCookie(w, r)
-	// var username string
-	// var role string
-	// if userSession != nil {
-	// 	username = userSession.Username
-	// 	role, _ = helpers.SQLGetUserRole(db, userSession.Username)
-	// }
-
 	posts, _ := getPostsFromDatabase(db, postData.Categories, userSession.Username)
 	comments, _ := getCommentsFromDatabase(db)
 
@@ -1485,19 +1343,11 @@ func showMyPostsHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	data := HomePageData{
 		 Username:           rawData.Username,
 		 Usernames:          rawData.Usernames,
-		Posts:              posts,
-		// Role:               role,
-		// ModerationRequests: moderationRequests,
-		// ReportedRequests:   count,
+		 Posts:              posts,
 		 UsernameId:         rawData.UsernameId,
 		 Userlist: 			rawData.Userlist,	
 	}
 
-	// data := HomePageData{
-	// 	Username: username,
-	// 	Posts:    posts,
-	// 	Role:     role,
-	// }
 	if err != nil {
 		// if error exists, mean there is no session and show view page only.
 		var rawMessage = "Usersession is not valid! Proceed to registration page!"
@@ -1510,7 +1360,6 @@ func showMyPostsHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(message)
 	} else {
-		//fmt.Println(string(jsonData))
 		jsonData, err := json.Marshal(data)
 		if err != nil {
 			fmt.Printf("Could now marshal data %s\n", err)

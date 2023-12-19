@@ -5,6 +5,7 @@ import { commentsScript } from "/static/commentsScript.js";
 import { likesFunction } from "/static/likesFunction.js";
 import { fetchFilteredPosts } from "./filterpages.js";
 import { fetchMyPosts } from "./mypostsfilter.js";
+import { logout } from "./logout.js";
 
 export async function mainPage(data) {
   if (!data) {
@@ -50,30 +51,15 @@ export async function mainPage(data) {
   createPostBtn.type = "submit";
   createPostBtn.textContent = "Create Post";
 
-  //   const createPostForm = document.createElement('form');
-  // createPostForm.method = 'get';
-  // createPostForm.action = '#createpost';
-
-  // const createPostButton = document.createElement('input');
-  // createPostButton.type = 'submit';
-  // createPostButton.value = 'Create Post';
-  // createPostButton.className = 'submit-button bg-gray-300 hover:bg-gray-400 text-black p-2 mt-4 rounded';
-
   createPostForm.appendChild(createPostBtn);
   buttonDiv.appendChild(createPostForm);
   appDiv.appendChild(buttonDiv);
-
-  // Assuming 'appDiv' is the parent element where you want to append your forms
-  // and 'buttonDiv' is the div where all buttons will be placed.
 
   //toggleUserListBtn
   const toggleUserListButton = document.getElementById("toggleUserListBtn");
   toggleUserListButton.style.display = "block";
   // My Posts form and button
   const myPostsForm = document.createElement("form");
-  // myPostsForm.action = '/myposts';
-  // myPostsForm.method = 'post';
-
   const myPostsBtn = document.createElement("button");
   myPostsBtn.className =
     "bg-blue-300 hover:bg-blue-400 border rounded p-2 m-1 transition duration-500";
@@ -129,6 +115,7 @@ export async function mainPage(data) {
   const logoutForm = document.createElement("form");
   logoutForm.action = "/logout";
   logoutForm.method = "post";
+  
 
   const logoutBtn = document.createElement("input");
   logoutBtn.className =
@@ -137,53 +124,76 @@ export async function mainPage(data) {
   logoutBtn.id = "log-out";
   logoutBtn.name = "log-out";
   logoutBtn.value = "Log out";
+  async function logoutter() {
+    try {
+        const response = await fetch('/logout', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json(); // or response.text() if the response is not in JSON format
+        console.log('Logout successful:', data);
+
+    } catch (error) {
+        console.error('Logout failed:', error);
+    }
+}
+  logoutBtn.addEventListener("click", function (event){
+    logoutter()
+    logout()
+  })
 
   logoutForm.appendChild(logoutBtn);
   buttonDiv.appendChild(logoutForm);
 
-  // Finally, append the buttonDiv to the appDiv
   appDiv.appendChild(buttonDiv);
 
   // Add the rest of the buttons and elements in a similar manner
 
-  // Role-based logic
-  if (data.Role === "admin") {
-    const moderationLink = document.createElement("a");
-    moderationLink.href = "/admin";
-    moderationLink.className =
-      "bg-blue-300 hover:bg-blue-400 border rounded p-2 m-1 transition duration-500 inline-block text-center";
-    moderationLink.textContent = "Moderation";
-    buttonDiv.appendChild(moderationLink);
+  // Hint: Make this section active to enable moderation 
 
-    if (data.ModerationRequests && data.ModerationRequests.length > 0) {
-      const notificationSpan = document.createElement("span");
-      notificationSpan.className =
-        "inline-block bg-red-500 text-white text-xs px-1 pt-1 pb-0.5 rounded-full uppercase font-semibold tracking-wide";
-      notificationSpan.textContent = data.ModerationRequests.length.toString();
-      moderationLink.appendChild(notificationSpan);
-    }
-  } else if (data.Role === "moderator") {
-    const smallModeratorLink = document.createElement("a");
-    smallModeratorLink.href = "/report";
-    smallModeratorLink.className =
-      "bg-blue-300 hover:bg-blue-400 border rounded p-2 m-1 transition duration-500 inline-block text-center";
-    smallModeratorLink.textContent = "Reported posts";
-    buttonDiv.appendChild(smallModeratorLink);
-    if (data.ReportedRequests > 0) {
-      const notificationSpan = document.createElement("span");
-      notificationSpan.className =
-        "inline-block bg-red-500 text-white text-xs px-1 pt-1 pb-0.5 rounded-full uppercase font-semibold tracking-wide";
-      notificationSpan.textContent = data.ModerationRequests.length.toString();
-      moderationLink.appendChild(notificationSpan);
-    }
-  }
-  //filteredPosts form
+  // if (data.Role === "admin") {
+  //   const moderationLink = document.createElement("a");
+  //   moderationLink.href = "/admin";
+  //   moderationLink.className =
+  //     "bg-blue-300 hover:bg-blue-400 border rounded p-2 m-1 transition duration-500 inline-block text-center";
+  //   moderationLink.textContent = "Moderation";
+  //   buttonDiv.appendChild(moderationLink);
+
+  //   if (data.ModerationRequests && data.ModerationRequests.length > 0) {
+  //     const notificationSpan = document.createElement("span");
+  //     notificationSpan.className =
+  //       "inline-block bg-red-500 text-white text-xs px-1 pt-1 pb-0.5 rounded-full uppercase font-semibold tracking-wide";
+  //     notificationSpan.textContent = data.ModerationRequests.length.toString();
+  //     moderationLink.appendChild(notificationSpan);
+  //   }
+  // } else if (data.Role === "moderator") {
+  //   const smallModeratorLink = document.createElement("a");
+  //   smallModeratorLink.href = "/report";
+  //   smallModeratorLink.className =
+  //     "bg-blue-300 hover:bg-blue-400 border rounded p-2 m-1 transition duration-500 inline-block text-center";
+  //   smallModeratorLink.textContent = "Reported posts";
+  //   buttonDiv.appendChild(smallModeratorLink);
+  //   if (data.ReportedRequests > 0) {
+  //     const notificationSpan = document.createElement("span");
+  //     notificationSpan.className =
+  //       "inline-block bg-red-500 text-white text-xs px-1 pt-1 pb-0.5 rounded-full uppercase font-semibold tracking-wide";
+  //     notificationSpan.textContent = data.ModerationRequests.length.toString();
+  //     moderationLink.appendChild(notificationSpan);
+  //   }
+  // }
   // Create the filtered posts form
   const filteredPostsForm = document.createElement("form");
   filteredPostsForm.addEventListener("submit", function (event) {
     event.preventDefault(); // Prevent the form from submitting in the traditional way
 
-    // Collect the selected checkbox values
     let selectedGames = [];
     games.forEach((game) => {
       const checkbox = document.getElementById(game.id);
@@ -195,9 +205,7 @@ export async function mainPage(data) {
     // Call a function to handle fetching the filtered data
     fetchFilteredPosts(selectedGames);
   });
-  //in progress
-  // filteredPostsForm.action = '/filterpage';
-  // filteredPostsForm.method = 'post';
+
 
   // Create the container div for the checkboxes and button
   const filterContainerDiv = document.createElement("div");
@@ -245,16 +253,12 @@ export async function mainPage(data) {
   submitBtn.type = "submit";
   submitBtn.textContent = "Apply filter";
 
-  // Append the button to the container div
   filterContainerDiv.appendChild(submitBtn);
 
-  // Append the container div to the form
   filteredPostsForm.appendChild(filterContainerDiv);
 
-  // Assuming 'appDiv' is the parent element where you want to append your form
   appDiv.appendChild(filteredPostsForm);
 
-  // ... Add other form and checkbox elements ...
   console.log("do i arrive to the data.posts?");
   // Posts loop
   data.Posts.forEach((post) => {
@@ -264,7 +268,6 @@ export async function mainPage(data) {
     const innerPostDiv = document.createElement("div");
     innerPostDiv.className = "flex flex-col p-6 bg-gray-200 mb-4 rounded";
     innerPostDiv.style = "max-width: 800px; margin: 1rem auto;";
-    //postDiv.appendChild(innerPostDiv)
     const innerPostDiv2 = document.createElement("div");
     innerPostDiv2.className = "bg-gray-300";
     innerPostDiv.appendChild(innerPostDiv2);
@@ -346,11 +349,11 @@ export async function mainPage(data) {
         commentContent.textContent = comment.Content;
         const commentAttributes = document.createElement("p");
         commentAttributes.className = "my-5 mx-2";
-        commentAttributes.textContent = "Post by:";
+        commentAttributes.textContent = "Post by: ";
         const commentUsername = document.createElement("span");
         commentUsername.className = "font-bold";
         commentUsername.textContent = comment.Username;
-        const commentPostedAgo = document.createElement("span");
+        const commentPostedAgo = document.createElement("p");
         commentPostedAgo.textContent = comment.PostedAgo;
         commentAttributes.appendChild(commentUsername);
         commentAttributes.appendChild(commentPostedAgo);
@@ -541,10 +544,10 @@ export async function mainPage(data) {
     // Check if the user list is currently visible
     if (userList.style.display === "none" || userList.style.display === "") {
       userList.style.display = "block"; // Show the user list
-      toggleUserListBtn.textContent = "Hide User List";
+      toggleUserListBtn.textContent = "Hide friendlist";
     } else {
       userList.style.display = "none"; // Hide the user list
-      toggleUserListBtn.textContent = "Show User List";
+      toggleUserListBtn.textContent = "Show  friendlist";
     }
   });
 
@@ -652,21 +655,15 @@ export async function mainPage(data) {
       timestampDiv.classList.add("message-timestamp");
       timestampDiv.textContent = formatDate(message.timestamp);
 
-      // const senderDiv = document.createElement('div');
-      // senderDiv.classList.add('message-sender');
-      // senderDiv.textContent = message.sender;
-
       const contentDiv = document.createElement("div");
       contentDiv.classList.add("message-content");
       contentDiv.textContent = message.content;
 
       messageWrapper.appendChild(timestampDiv);
-      // messageWrapper.appendChild(senderDiv);
       messageWrapper.appendChild(contentDiv);
 
       messagesContainer.appendChild(messageWrapper);
       if (shouldScrollToBottom) {
-        // Auto-scroll to the bottom to show new messages
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
       }
     });
@@ -678,7 +675,6 @@ export async function mainPage(data) {
     const senderusername = data.Username;
     const receiverusername = currentChatUsername;
 
-    // Include the 'page' parameter in the request URL
     // const url = `/get-message?senderusername=${encodeURIComponent(senderusername)}&receiverusername=${encodeURIComponent(receiverusername)}&page=${page}`;
     const limit = 10;
     const offset = (page - 1) * limit;
@@ -811,19 +807,6 @@ export async function mainPage(data) {
       messagesContainer.scrollHeight - oldScrollHeight;
   }
 
-  //  const messagesContainer = document.getElementById('messages');
-
-  // // // Check if the scroll event listener is set up correctly
-  //  messagesContainer.addEventListener('scroll', async () => {
-  // //   // Log the scroll position to make sure the event fires
-
-  //   // Check if the user has scrolled to the top and if we're not already loading messages
-  //   if (messagesContainer.scrollTop === 0 && !loadingMessages && !allMessagesLoaded) {
-  //     console.log('Attempting to load more messages');
-  //     await loadMoreMessages();
-  //   }
-  // });
-
   initiateChat(currentChatUsername);
   getMessagesFromServer(1);
   // Throttle function to limit the rate at which a function can fire
@@ -848,7 +831,6 @@ export async function mainPage(data) {
     };
   }
 
-  // Add the scroll event listener to your messages container
 
   const messagesContainer = document.getElementById("messages");
   messagesContainer.addEventListener(
@@ -859,17 +841,15 @@ export async function mainPage(data) {
         await loadMoreMessages();
       }
     }, 500)
-  ); // Adjust the throttle limit (e.g., 500ms) as needed
+  ); 
   // Update the rest of your functions and event listeners as needed
 
   function formatDate(timestamp) {
-    // Implement date formatting here
     return new Date(timestamp).toLocaleString();
   }
   // userList.style.display = 'none'; // Start with the user list hidden
   toggleUserListBtn.textContent = "Show User List";
 
-  // Presumably, you would have a function like 'createUserList' that adds users to the sidebar
   createUserList();
 
   // If no posts, display a message
@@ -880,8 +860,7 @@ export async function mainPage(data) {
     appDiv.appendChild(message);
   }
   // Add scripts
-  //   const script1 = document.createElement('script');
-  //   script1.src = '/static/changeColor.js';
+
   const scriptArr = [
     "chatBar.js",
     "changeColor.js",

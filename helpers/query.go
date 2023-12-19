@@ -66,7 +66,6 @@ ORDER BY
     }
 
     // Return the slice of users
-	fmt.Println("[HALLO]: ", users)
     return users, nil
 }
 
@@ -74,8 +73,7 @@ ORDER BY
 
 func GetPrivateMessages(db *sql.DB, senderUsername string, readerUsername string, limit int, offset int) (privateMessages []PrivateMessage, err error) {
 	var rows *sql.Rows
-	fmt.Println("sender and reciever inside GetPrivateMessages is: ", senderUsername, "\n",readerUsername, limit, offset)
-	fmt.Println("Call inside GetPrivateMessages")
+
 	if limit == 0 {
 		limit = 10 
 	}
@@ -87,7 +85,6 @@ func GetPrivateMessages(db *sql.DB, senderUsername string, readerUsername string
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Println("Need on: ", senderUserID, readerUserID)
 	rows, err = db.Query(`SELECT sender_id, receiver_id, content, created_at FROM private_messages WHERE (sender_id = ? AND receiver_id = ?)OR (sender_id = ? AND receiver_id = ?) ORDER BY created_at DESC LIMIT ? OFFSET ?;`, senderUserID, readerUserID, readerUserID, senderUserID, limit, offset)
 		if err != nil {
 			fmt.Println(err)
@@ -110,16 +107,13 @@ func GetPrivateMessages(db *sql.DB, senderUsername string, readerUsername string
 				return nil , fmt.Errorf("Failed after iterating rows: %v", err)
 			}
 
-			fmt.Println("This is length of private Messages inside the SQL func:\n", len(privateMessages))
 			return privateMessages, nil
 		}	
-	fmt.Println("GetPrivateMessages: I should not arrive here?")
 	return privateMessages, nil 
 }
 
 func GetUsernames(db *sql.DB, senderIdInt int) (usernames []string, err error) {
 	var rows *sql.Rows
-//	regularQueryForUser := "SELECT username FROM users ORDER BY UPPER(username);"
 	senderId := strconv.Itoa(senderIdInt) 
 
 	queryForActiveUser :=
