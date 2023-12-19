@@ -737,9 +737,11 @@ func submitComment(w http.ResponseWriter, r *http.Request, db *sql.DB) {
     }
 
     fmt.Printf("The comment inside submitComment is: %v\n", comment)
+	fmt.Println("The post ID is", postID)
 
     if comment == "" {
         http.Error(w, "Creating empty comment is forbidden.", http.StatusBadRequest)
+		fmt.Println("comment is empty!")
     } else {
         if err := helpers.SQLInsertComment(db, postID, comment, userID); err != nil {
             http.Error(w, "Error inserting comment", http.StatusInternalServerError)
@@ -748,10 +750,11 @@ func submitComment(w http.ResponseWriter, r *http.Request, db *sql.DB) {
     }
 
     // Redirect to the appropriate page, e.g., assuming you have an "homepage.html" page
-    http.Redirect(w, r, "homepage.html", http.StatusSeeOther)
+    //http.Redirect(w, r, "homepage.html", http.StatusSeeOther)
 }
 
 func addComment(w http.ResponseWriter, r *http.Request) {
+
 	fmt.Println("addComment got called!")
 
 	if r.Method != http.MethodPost {
@@ -770,6 +773,7 @@ func addComment(w http.ResponseWriter, r *http.Request) {
 		fmt.Println( " err")
 		return
 	}
+
 	// t, err := template.ParseFiles("templates/addcomment.html")
 	// if err != nil {
 	// 	http.Error(w, "Internal Server Error", http.StatusInternalServerError)
