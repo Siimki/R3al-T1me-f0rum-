@@ -1,27 +1,42 @@
-## Forum
+# Real-Time-Forum
 
-### With this project we learned about 
+## With this project we learned about
 
+- User sessions
+- Crypting strings
+- Archiecture of forum
+- SQL, building up and using the database
+- JS to display likes/dislikes in real-time
+- SPA (Single Page Application)
+- Chatbox and private messaging
+- Go & JS websockets
 
-- User sessions.
-- Crypting strings.
-- Archiecture of forum.
-- SQL, building up and using the database.
-- JS to display likes/dislikes in real-time.
+### Run Locally
+
+Clone the project
+
+- `git clone https://01.kood.tech/git/RomaMarkilov/make-your-game.git`
+
+Go to the project directory
+
+- `cd make-your-game`
+
+### Instructions
+
+- run `go run server.go` and go to `http://localhost:8080/` to start auditing
+- ||
+- run `sh build_and_run.sh` and run the image in docker
 
 ### Admin credentials
 
 - Username for admin: Admin
-- Password for admin: Admin123 
+- Password for admin: Admin123
 
 ### Audit questions for forum-moderation:
 
-https://github.com/01-edu/public/blob/master/subjects/forum/moderation/audit.md
+https://github.com/01-edu/public/blob/master/subjects/real-time-forum/audit/README.md
 
-### Instructions
+### Authors
 
-- run  ```go run server.go``` 
-
-- go to ```http://localhost:8080/``` to start auditing
-
-### Project done by e.mand, Hannes878, JoosepRa, Siimki
+- [@Siimki](https://01.kood.tech/git/Siimki)
+- [@RomanMark](https://01.kood.tech/git/RomaMarkilov)
