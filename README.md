@@ -15,11 +15,11 @@
 
 Clone the project
 
-- `git clone https://01.kood.tech/git/RomaMarkilov/make-your-game.git`
+- `git clone https://01.kood.tech/git/Siimki/real-time-forum`
 
 Go to the project directory
 
-- `cd make-your-game`
+- `cd real-time-forum`
 
 ### Instructions
 
