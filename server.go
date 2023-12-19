@@ -1463,12 +1463,12 @@ func showMyPostsHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	fmt.Println("content:", postData.Categories)
 
 	userSession, _ := helpers.ValidateSessionFromCookie(w, r)
-	var username string
-	var role string
-	if userSession != nil {
-		username = userSession.Username
-		role, _ = helpers.SQLGetUserRole(db, userSession.Username)
-	}
+	// var username string
+	// var role string
+	// if userSession != nil {
+	// 	username = userSession.Username
+	// 	role, _ = helpers.SQLGetUserRole(db, userSession.Username)
+	// }
 
 	posts, _ := getPostsFromDatabase(db, postData.Categories, userSession.Username)
 	comments, _ := getCommentsFromDatabase(db)
@@ -1477,11 +1477,23 @@ func showMyPostsHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 
 	likesToPostsAndComments(db, posts)
 
+	rawData := parsingHomePageData(w, r, db)
 	data := HomePageData{
-		Username: username,
-		Posts:    posts,
-		Role:     role,
+		 Username:           rawData.Username,
+		 Usernames:          rawData.Usernames,
+		Posts:              posts,
+		// Role:               role,
+		// ModerationRequests: moderationRequests,
+		// ReportedRequests:   count,
+		 UsernameId:         rawData.UsernameId,
+		 Userlist: 			rawData.Userlist,	
 	}
+
+	// data := HomePageData{
+	// 	Username: username,
+	// 	Posts:    posts,
+	// 	Role:     role,
+	// }
 	if err != nil {
 		// if error exists, mean there is no session and show view page only.
 		var rawMessage = "Usersession is not valid! Proceed to registration page!"

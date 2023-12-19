@@ -274,8 +274,8 @@ export async function mainPage(data) {
     innerPostDiv2.appendChild(postContent);
     const postAttributes = document.createElement("p");
     postAttributes.className = "my-5 mx-5";
-    postAttributes.textContent = "Post by";
-    const usernamePostAttributes = document.createElement("p");
+    postAttributes.textContent = "Post by: ";
+    const usernamePostAttributes = document.createElement("span");
     usernamePostAttributes.className = "font-bold";
     usernamePostAttributes.textContent = post.Username;
     postAttributes.appendChild(usernamePostAttributes);

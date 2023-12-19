@@ -1,3 +1,5 @@
+import { fetchMyPosts } from "./mypostsfilter.js";
+
 export function createPost() {
     var appDiv = document.getElementById('app');
     var bodyDiv = document.getElementById('body')
@@ -19,8 +21,8 @@ export function createPost() {
         buttonDiv.className = 'bg-blue-300 hover:bg-blue-400 border rounded p-2 transition duration-500';
 
         var buttonForm = document.createElement('form');
-        buttonForm.action = action;
-        buttonForm.method = 'post';
+        // buttonForm.action = action;
+        // buttonForm.method = 'post';
 
         var formButton = document.createElement('button');
         formButton.type = 'submit';
@@ -29,6 +31,14 @@ export function createPost() {
         if (buttonName) formButton.name = buttonName;
         if (buttonValue) formButton.value = buttonValue;
 
+        formButton.addEventListener("click", function (event) {
+            event.preventDefault(); // Prevent the form from submitting traditionally
+            fetchMyPosts(`${buttonValue}`); // Fetch "My Liked Posts"
+            var toClear = document.getElementById('post-submission-area')
+            toClear.innerHTML = ''
+            toClear.className = ''
+          });
+
         buttonForm.appendChild(formButton);
         buttonDiv.appendChild(buttonForm);
 
@@ -36,17 +46,19 @@ export function createPost() {
     }
 
     // Create and append the buttons
-    flexDiv.appendChild(createButtonDiv('/myposts', 'My posts', 'myposts', 'myposts'));
-    flexDiv.appendChild(createButtonDiv('/myposts', 'My liked posts', 'myposts', 'mylikedposts'));
+    flexDiv.appendChild(createButtonDiv("",'My posts', 'myposts', 'myposts'));
+    flexDiv.appendChild(createButtonDiv("",'My liked posts', 'myposts', 'mylikedposts'));
+    flexDiv.appendChild(createButtonDiv("",'Show all posts', 'myposts', 'normal'));
+
 
     // Create the "Show all posts" button
-    var showAllPostsButton = document.createElement('div');
-    showAllPostsButton.className = 'bg-blue-300 hover:bg-blue-400 border rounded p-2 transition duration-500';
-    var showAllPostsLink = document.createElement('button');
-    showAllPostsLink.onclick = function() { window.location.href = 'http://localhost:8080/homepage.html'; };
-    showAllPostsLink.textContent = 'Show all posts';
-    showAllPostsButton.appendChild(showAllPostsLink);
-    flexDiv.appendChild(showAllPostsButton);
+    // var showAllPostsButton = document.createElement('div');
+    // showAllPostsButton.className = 'bg-blue-300 hover:bg-blue-400 border rounded p-2 transition duration-500';
+    // var showAllPostsLink = document.createElement('button');
+    // showAllPostsLink.onclick = function() { window.location.href = 'http://localhost:8080/homepage.html'; };
+    // showAllPostsLink.textContent = 'Show all posts';
+    // showAllPostsButton.appendChild(showAllPostsLink);
+    // flexDiv.appendChild(showAllPostsButton);
 
     // Create the "Log out" button
     flexDiv.appendChild(createButtonDiv('/logout', 'Log out', 'log-out', 'Log out'));
@@ -56,7 +68,7 @@ export function createPost() {
         // Create the post submission area
         var postSubmissionArea = document.createElement('div');
         postSubmissionArea.className = 'flex flex-col p-8 bg-gray-200 mb-4 mx-16 rounded';
-
+        postSubmissionArea.id = 'post-submission-area'
         var postFormContainer = document.createElement('div');
         postFormContainer.className = 'relative bg-gray-300';
 
