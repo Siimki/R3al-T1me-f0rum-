@@ -497,7 +497,8 @@ export async function mainPage(data) {
       userItem.classList.add("user-list-item", "chatboxToggle");
       userItem.textContent = user.username;
       userItem.dataset.userId = user.id; // Store the user ID using data attributes
-      currentChatUsername = user;
+      //I try to outComment this line
+      // currentChatUsername = user;
       // chatBox.classList.add('expanded');
 
       // Set up the click event for initiating chat
@@ -615,6 +616,8 @@ export async function mainPage(data) {
     var senderusername = data.Username;
     var receiverusername = currentChatUsername;
     console.log("The message we send to the server:", message);
+    console.log("Sender and Receiver below")
+    console.log("Sender and Receiver", senderusername, receiverusername)
 
     // Here we send the message through the WebSocket instead of using fetch
     if (socket.readyState === WebSocket.OPEN) {

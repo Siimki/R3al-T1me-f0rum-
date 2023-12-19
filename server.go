@@ -160,7 +160,7 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		}
 
 		if err := ws.ReadJSON(&msg); err != nil {
-			log.Println("read:", err)
+			log.Println("[NotifyUserStatus]read:", err)
 			delete(clients, username)
 			return
 		}
