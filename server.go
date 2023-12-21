@@ -12,15 +12,15 @@ import (
 	"strconv"
 	"text/template"
 	"time"
+
 	"github.com/gorilla/websocket"
 	_ "github.com/mattn/go-sqlite3"
 )
 
 var upgrader = websocket.Upgrader{
-    ReadBufferSize:  1024,
-    WriteBufferSize: 1024,
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
 }
-  
 
 type Post struct {
 	ID           int
@@ -42,8 +42,8 @@ type HomePageData struct {
 	ModerationRequests []string
 	Moderators         []string
 	ReportedRequests   int
-	UsernameId 		   int
-	Userlist          []helpers.Userlist // Changed from []string to []UserWithID
+	UsernameId         int
+	Userlist           []helpers.Userlist // Changed from []string to []UserWithID
 }
 
 type Comment struct {
@@ -62,14 +62,12 @@ type Vote struct {
 	Username string `json:"username"`
 }
 
-
-
 var clients = make(map[string]Client) // map username to websocket and additional info
 
 // var clients = make(map[string]*websocket.Conn)
 type Client struct {
-    username string
-    ws       *websocket.Conn
+	username string
+	ws       *websocket.Conn
 }
 
 func main() {
@@ -105,9 +103,9 @@ func main() {
 	http.HandleFunc("/homepage", func(w http.ResponseWriter, r *http.Request) { homePageHandler(w, r, db) })
 	http.HandleFunc("/logout", logOutHandler)
 	http.HandleFunc("/createpost", serveCreatePostPage)
-	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request){handleWebSocket(w,r,db)})
-	http.HandleFunc("/send-message", func(w http.ResponseWriter, r *http.Request){messageHandler(w,r,db)})
-	http.HandleFunc("/get-message", func(w http.ResponseWriter, r *http.Request){getMessageHandler(w,r,db)})
+	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) { handleWebSocket(w, r, db) })
+	http.HandleFunc("/send-message", func(w http.ResponseWriter, r *http.Request) { messageHandler(w, r, db) })
+	http.HandleFunc("/get-message", func(w http.ResponseWriter, r *http.Request) { getMessageHandler(w, r, db) })
 	http.HandleFunc("/", homeHandler)
 
 	fmt.Println("Server started on port 8080.")
@@ -118,7 +116,7 @@ func main() {
 func handleWebSocket(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 	fmt.Println("Websocket got called")
-	ws, err := upgrader.Upgrade(w,r, nil )
+	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Fatal()
 	}
@@ -128,7 +126,7 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	limit := r.URL.Query().Get("limit")
 	offset := r.URL.Query().Get("offset")
 	// fmt.Println("this is username, limit and offset from URL", username, limit, offset)
-	// clients[username] = ws 
+	// clients[username] = ws
 	clients[username] = Client{username, ws}
 
 	strLimit, err := strconv.Atoi(limit)
@@ -140,20 +138,20 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		fmt.Println("Str conversion fucked v2")
 	}
 
-   // Notify all users about the updated status
-   notifyUserStatus(username, true)
-	for { 
+	// Notify all users about the updated status
+	notifyUserStatus(username, true)
+	for {
 		var msg struct {
 			Message          string `json:"message"`
 			SenderUsername   string `json:"senderusername"`
 			ReceiverUsername string `json:"receiverusername"`
-			Status 			 string `json:"status"`
+			Status           string `json:"status"`
 		}
 		type WebSocketResponse struct {
-			Type     string        `json:"type"`
-			Messages any     `json:"messages,omitempty"`
-			Userlist []helpers.Userlist      `json:"userlist,omitempty"`
-			Online bool 	 `json:"active,omitempty"`
+			Type     string             `json:"type"`
+			Messages any                `json:"messages,omitempty"`
+			Userlist []helpers.Userlist `json:"userlist,omitempty"`
+			Online   bool               `json:"active,omitempty"`
 		}
 		for _, v := range clients {
 			notifyUserStatus(v.username, true)
@@ -166,12 +164,12 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		}
 
 		if err := liteMesssageHandler(msg.Message, msg.SenderUsername, msg.ReceiverUsername, db); err != nil {
-			log.Println("Store message:", err) 
+			log.Println("Store message:", err)
 			continue
 		}
 
 		if senderWs, ok := clients[msg.SenderUsername]; ok {
-			
+
 			privateMessages, err := helpers.GetPrivateMessages(db, msg.SenderUsername, msg.ReceiverUsername, strLimit, offsetLimit)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -186,9 +184,9 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 				Type:     "message",
 				Messages: privateMessages,
 			}
-			
+
 			if err := senderWs.ws.WriteJSON(response); err != nil {
-				log.Println("write confirmation error:", err )
+				log.Println("write confirmation error:", err)
 				//handle errror
 			}
 		}
@@ -208,158 +206,155 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 				Type:     "message",
 				Messages: privateMessages,
 			}
-			
+
 			if err := receiverWs.ws.WriteJSON(response); err != nil {
-				log.Println("write confirmation error:", err )
+				log.Println("write confirmation error:", err)
 				//handle errror
 			}
 		}
 		// After message is sent, update user list and broadcast it
 		userId, err := helpers.GetUserID(msg.SenderUsername)
-        if err != nil {
-            log.Println("GetUserID error:", err)
-            continue
-        }
+		if err != nil {
+			log.Println("GetUserID error:", err)
+			continue
+		}
 
-        updatedUserList, err := helpers.GetUsernamesIds(db, userId)
-        if err != nil {
-            log.Println("Error fetching updated user list:", err)
-            continue
-        }
+		updatedUserList, err := helpers.GetUsernamesIds(db, userId)
+		if err != nil {
+			log.Println("Error fetching updated user list:", err)
+			continue
+		}
 		broadcastData := WebSocketResponse{
 			Type:     "userlist",
 			Userlist: updatedUserList,
 		}
-		
 
-        for _, clientWs := range clients {
-            if err := clientWs.ws.WriteJSON(broadcastData); err != nil {
-                log.Println("Error sending updated user list:", err)
-            }
-        }
+		for _, clientWs := range clients {
+			if err := clientWs.ws.WriteJSON(broadcastData); err != nil {
+				log.Println("Error sending updated user list:", err)
+			}
+		}
 	}
-	
+
 }
 
-
 func notifyUserStatus(username string, online bool) {
-    // Create a response struct
+	// Create a response struct
 	userID, err := helpers.GetUserID(username)
 	if err != nil {
 		fmt.Println(err)
 	}
-    response := struct {
-        Type     string `json:"type"`
-        Username string `json:"username"`
-		UserId   int `json:"userid"`
-        Online   bool   `json:"online"`
-    }{
-        Type:     "status",
-        Username: username,
-		UserId: userID,
-        Online:   online,
-    }
+	response := struct {
+		Type     string `json:"type"`
+		Username string `json:"username"`
+		UserId   int    `json:"userid"`
+		Online   bool   `json:"online"`
+	}{
+		Type:     "status",
+		Username: username,
+		UserId:   userID,
+		Online:   online,
+	}
 
-    // Send the status to all connected clients
-    for _, client := range clients {
-        if err := client.ws.WriteJSON(response); err != nil {
-            log.Printf("error: %v", err)
-        }
-    }
+	// Send the status to all connected clients
+	for _, client := range clients {
+		if err := client.ws.WriteJSON(response); err != nil {
+			log.Printf("error: %v", err)
+		}
+	}
 }
 
-func liteMesssageHandler(msg string, senderName string, receiver string, db *sql.DB) (err error ) {
+func liteMesssageHandler(msg string, senderName string, receiver string, db *sql.DB) (err error) {
 
-	  senderUserId, err := helpers.GetUserID(senderName)
-	  if err != nil {
+	senderUserId, err := helpers.GetUserID(senderName)
+	if err != nil {
 		fmt.Println(err)
-	  }
-	  receiverUserId, err := helpers.GetUserID(receiver)
-	  if err != nil {
+	}
+	receiverUserId, err := helpers.GetUserID(receiver)
+	if err != nil {
 		fmt.Println(err)
-	  }
-	  log.Printf("Message from %s to %s: %s", senderName, receiver, msg)
+	}
+	log.Printf("Message from %s to %s: %s", senderName, receiver, msg)
 
-	  _, err = db.Exec("INSERT INTO private_messages (content, sender_id, receiver_id) VALUES (?, ?, ?)", msg, senderUserId, receiverUserId )
-	  if err != nil {
+	_, err = db.Exec("INSERT INTO private_messages (content, sender_id, receiver_id) VALUES (?, ?, ?)", msg, senderUserId, receiverUserId)
+	if err != nil {
 		fmt.Println(err)
 		return
-	  } 
-	 
+	}
+
 	return err
 }
 
 func getMessageHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
-    // Parse query parameters
-    senderUsername := r.URL.Query().Get("senderusername")
-    receiverUsername := r.URL.Query().Get("receiverusername")
+	// Parse query parameters
+	senderUsername := r.URL.Query().Get("senderusername")
+	receiverUsername := r.URL.Query().Get("receiverusername")
 
-    // Convert limit and offset to integers
+	// Convert limit and offset to integers
 	pageStr := r.URL.Query().Get("page")
-    page, err := strconv.Atoi(pageStr)
-    if err != nil {
-        // handle error
-    }
+	page, err := strconv.Atoi(pageStr)
+	if err != nil {
+		// handle error
+	}
 
-    const limit = 10
-    offset := (page - 1) * limit
+	const limit = 10
+	offset := (page - 1) * limit
 
-    // Fetch messages
-    privateMessages, err := helpers.GetPrivateMessages(db, senderUsername, receiverUsername, limit, offset)
-    if err != nil {
-        fmt.Println("Error fetching messages:", err)
-        http.Error(w, err.Error(), http.StatusInternalServerError)
-        return
-    }
+	// Fetch messages
+	privateMessages, err := helpers.GetPrivateMessages(db, senderUsername, receiverUsername, limit, offset)
+	if err != nil {
+		fmt.Println("Error fetching messages:", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-    // Handle case when no messages are found
-    if len(privateMessages) == 0 {
-        fmt.Println("No messages found")
-        w.Write([]byte("[]")) // Send empty JSON array
-        return
-    }
+	// Handle case when no messages are found
+	if len(privateMessages) == 0 {
+		fmt.Println("No messages found")
+		w.Write([]byte("[]")) // Send empty JSON array
+		return
+	}
 
-    // Send messages as JSON
-    w.Header().Set("Content-Type", "application/json")
-    if err := json.NewEncoder(w).Encode(privateMessages); err != nil {
-        fmt.Println("Error encoding messages:", err)
-        http.Error(w, err.Error(), http.StatusInternalServerError)
-    }
+	// Send messages as JSON
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(privateMessages); err != nil {
+		fmt.Println("Error encoding messages:", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
-
 
 func messageHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 
 	var msg struct {
-		Message  string `json:"message"`
-		SenderUsername string `json:"senderusername"`
+		Message          string `json:"message"`
+		SenderUsername   string `json:"senderusername"`
 		Receiverusername string `json:"receiverusername"`
-		Id int `json:"Id"`
-	  }
-	  err := json.NewDecoder(r.Body).Decode(&msg)
-	  fmt.Println("this is msg", msg.Message, "this is user that sent messsage:", msg.SenderUsername, "and receiver",msg.Receiverusername)
-	  if err != nil {
+		Id               int    `json:"Id"`
+	}
+	err := json.NewDecoder(r.Body).Decode(&msg)
+	fmt.Println("this is msg", msg.Message, "this is user that sent messsage:", msg.SenderUsername, "and receiver", msg.Receiverusername)
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
-	  }
-	
-	  // Here you would insert the message into your database
-	  // db.Query("INSERT INTO messages (content, username) VALUES (?, ?)", msg.Message, msg.Username)
-	  senderUserId, err := helpers.GetUserID(msg.SenderUsername)
-	  if err != nil {
+	}
+
+	// Here you would insert the message into your database
+	// db.Query("INSERT INTO messages (content, username) VALUES (?, ?)", msg.Message, msg.Username)
+	senderUserId, err := helpers.GetUserID(msg.SenderUsername)
+	if err != nil {
 		fmt.Println(err)
-	  }
-	  receiverUserId, err := helpers.GetUserID(msg.Receiverusername)
-	  if err != nil {
+	}
+	receiverUserId, err := helpers.GetUserID(msg.Receiverusername)
+	if err != nil {
 		fmt.Println(err)
-	  }
-	  _, err = db.Exec("INSERT INTO private_messages (content, sender_id, receiver_id) VALUES (?, ?, ?)", msg.Message, senderUserId, receiverUserId )
-	  if err != nil {
+	}
+	_, err = db.Exec("INSERT INTO private_messages (content, sender_id, receiver_id) VALUES (?, ?, ?)", msg.Message, senderUserId, receiverUserId)
+	if err != nil {
 		fmt.Println(err)
 		return
-	  } 
-	  // Respond back to the client
-	  json.NewEncoder(w).Encode(map[string]bool{"success": true})
+	}
+	// Respond back to the client
+	json.NewEncoder(w).Encode(map[string]bool{"success": true})
 }
 
 func handleGithubLogin(w http.ResponseWriter, r *http.Request) {
@@ -499,26 +494,26 @@ func filterPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	type PostData struct {
-		Categories  []string `json:"categories"`
+		Categories []string `json:"categories"`
 	}
 	var postData PostData
 
-// Directly decode the JSON body
-		err := json.NewDecoder(r.Body).Decode(&postData)
-		if err != nil {
-			fmt.Println("[CREATEPOST]", err)
-			http.Error(w, "Bad request", http.StatusBadRequest)
-			return
-		}
-		defer r.Body.Close()
+	// Directly decode the JSON body
+	err := json.NewDecoder(r.Body).Decode(&postData)
+	if err != nil {
+		fmt.Println("[CREATEPOST]", err)
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
 
-		var catergories []int
+	var catergories []int
 	for _, v := range postData.Categories {
-			
+
 		categorieToAdd, err := strconv.Atoi(v)
 		if err != nil {
 			fmt.Println("atoi problem", err)
-		} 
+		}
 		catergories = append(catergories, categorieToAdd)
 	}
 
@@ -554,11 +549,11 @@ func filterPage(w http.ResponseWriter, r *http.Request) {
 	}
 	rawData := parsingHomePageData(w, r, db)
 	data := HomePageData{
-		 Username:           rawData.Username,
-		 Usernames:          rawData.Usernames,
-		 Posts:              posts,
-		 UsernameId:         rawData.UsernameId,
-		 Userlist: 			 rawData.Userlist,	
+		Username:   rawData.Username,
+		Usernames:  rawData.Usernames,
+		Posts:      posts,
+		UsernameId: rawData.UsernameId,
+		Userlist:   rawData.Userlist,
 	}
 
 	if err != nil {
@@ -670,7 +665,7 @@ func submitComment(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-  // Parse the request body as JSON
+	// Parse the request body as JSON
 	var requestBody struct {
 		PostID  string `json:"postID"`
 		Comment string `json:"comment"`
@@ -681,39 +676,36 @@ func submitComment(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		return
 	}
 
-
 	userSession, _ := helpers.ValidateSessionFromCookie(w, r)
 	if err != nil {
-        http.Error(w, "User not authenticated", http.StatusUnauthorized)
-        return
-    }
+		http.Error(w, "User not authenticated", http.StatusUnauthorized)
+		return
+	}
 	userID := helpers.SQLSelectUserID(db, userSession.Username)
-	 // Extract post ID and comment from the JSON request body
-	 postID := requestBody.PostID
-	 comment := requestBody.Comment
+	// Extract post ID and comment from the JSON request body
+	postID := requestBody.PostID
+	comment := requestBody.Comment
 	if postID == "" {
-        http.Error(w, "Missing post ID", http.StatusBadRequest)
-        fmt.Println("Post ID is missing, post ID is:", postID, "the comment is:", comment)
-        return
-    }
+		http.Error(w, "Missing post ID", http.StatusBadRequest)
+		fmt.Println("Post ID is missing, post ID is:", postID, "the comment is:", comment)
+		return
+	}
 
-
-    if comment == "" {
-        http.Error(w, "Creating empty comment is forbidden.", http.StatusBadRequest)
+	if comment == "" {
+		http.Error(w, "Creating empty comment is forbidden.", http.StatusBadRequest)
 		fmt.Println("comment is empty!")
-    } else {
-        if err := helpers.SQLInsertComment(db, postID, comment, userID); err != nil {
-            http.Error(w, "Error inserting comment", http.StatusInternalServerError)
-            return
-        }
-    }
+	} else {
+		if err := helpers.SQLInsertComment(db, postID, comment, userID); err != nil {
+			http.Error(w, "Error inserting comment", http.StatusInternalServerError)
+			return
+		}
+	}
 
-    // Redirect to the appropriate page, e.g., assuming you have an "homepage.html" page
-    //http.Redirect(w, r, "homepage.html", http.StatusSeeOther)
+	// Redirect to the appropriate page, e.g., assuming you have an "homepage.html" page
+	//http.Redirect(w, r, "homepage.html", http.StatusSeeOther)
 }
 
 func addComment(w http.ResponseWriter, r *http.Request) {
-
 
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed: func addComment", http.StatusMethodNotAllowed)
@@ -728,68 +720,65 @@ func addComment(w http.ResponseWriter, r *http.Request) {
 	postID := r.FormValue("id")
 	if postID == "" {
 		http.Error(w, "missing post id", http.StatusBadRequest)
-		fmt.Println( " err")
+		fmt.Println(" err")
 		return
 	}
 
-
-
 }
 
-	func createPost(w http.ResponseWriter, r *http.Request, db *sql.DB) {
-		fmt.Println("createPost got called")
+func createPost(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+	fmt.Println("createPost got called")
 
-			(w).Header().Set("Access-Control-Allow-Origin", "*") // or a specific domain
-		(w).Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-		(w).Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-		
-		if r.Method != http.MethodPost {
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-			return
-		}
-		type PostData struct {
-			PostContent string   `json:"content"`
-			Categories  []string `json:"categories"`
-		}
-	    var postData PostData
+	(w).Header().Set("Access-Control-Allow-Origin", "*") // or a specific domain
+	(w).Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	(w).Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
-    // Directly decode the JSON body
-			err := json.NewDecoder(r.Body).Decode(&postData)
-			if err != nil {
-				fmt.Println("[CREATEPOST]", err)
-				http.Error(w, "Bad request", http.StatusBadRequest)
-				return
-			}
-			defer r.Body.Close()
-
-
-		userSession, _ := helpers.ValidateSessionFromCookie(w, r)
-		userID := helpers.SQLSelectUserID(db, userSession.Username)
-		if postData.PostContent != "" {
-			if err := helpers.SQLInsertPost(db, postData.PostContent, userID); err != nil {
-				http.Error(w, "failed to insert post: %w", http.StatusBadRequest)
-			}
-		} else {
-			http.Error(w, "Creating empty post is forbidden.", http.StatusBadRequest)
-		}
-		postID, err := helpers.SQLLastPostID(db)
-		if err != nil {
-			http.Error(w, "Failed to get last post ID", http.StatusInternalServerError)
-			return
-		}
-		var catergories []int
-		for _, v := range postData.Categories {
-			
-			categorieToAdd, err := strconv.Atoi(v)
-			if err != nil {
-				fmt.Println("atoi problem", err)
-			} 
-			catergories = append(catergories, categorieToAdd)
-		}
-		helpers.SQLInsertCategorie(db, postID, catergories)
-	
-		// http.Redirect(w, r, "homepage.html", http.StatusSeeOther)
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
 	}
+	type PostData struct {
+		PostContent string   `json:"content"`
+		Categories  []string `json:"categories"`
+	}
+	var postData PostData
+
+	// Directly decode the JSON body
+	err := json.NewDecoder(r.Body).Decode(&postData)
+	if err != nil {
+		fmt.Println("[CREATEPOST]", err)
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
+
+	userSession, _ := helpers.ValidateSessionFromCookie(w, r)
+	userID := helpers.SQLSelectUserID(db, userSession.Username)
+	if postData.PostContent != "" {
+		if err := helpers.SQLInsertPost(db, postData.PostContent, userID); err != nil {
+			http.Error(w, "failed to insert post: %w", http.StatusBadRequest)
+		}
+	} else {
+		http.Error(w, "Creating empty post is forbidden.", http.StatusBadRequest)
+	}
+	postID, err := helpers.SQLLastPostID(db)
+	if err != nil {
+		http.Error(w, "Failed to get last post ID", http.StatusInternalServerError)
+		return
+	}
+	var catergories []int
+	for _, v := range postData.Categories {
+
+		categorieToAdd, err := strconv.Atoi(v)
+		if err != nil {
+			fmt.Println("atoi problem", err)
+		}
+		catergories = append(catergories, categorieToAdd)
+	}
+	helpers.SQLInsertCategorie(db, postID, catergories)
+
+	// http.Redirect(w, r, "homepage.html", http.StatusSeeOther)
+}
 
 func serveCreatePostPage(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -858,7 +847,7 @@ func likesToPostsAndComments(db *sql.DB, posts []Post) error {
 
 	return nil
 }
-func parsingHomePageData(w http.ResponseWriter, r *http.Request, db *sql.DB) (data HomePageData){
+func parsingHomePageData(w http.ResponseWriter, r *http.Request, db *sql.DB) (data HomePageData) {
 	userlist, err := helpers.GetUsernamesIds(db, 1)
 	if err != nil {
 		fmt.Println("[ERROR]", err)
@@ -875,7 +864,7 @@ func parsingHomePageData(w http.ResponseWriter, r *http.Request, db *sql.DB) (da
 			fmt.Println("Failed to get role")
 		}
 		moderationRequests, _ = helpers.SQLSelectModeratorRequest(db, false)
-		count, err = helpers.CountSQL(db, "reportedRequests", "")
+		count, _ = helpers.CountSQL(db, "reportedRequests", "")
 	} else {
 		fmt.Println("This is usersession in dataparse \n", userSession)
 		fmt.Println("This is error", err)
@@ -898,9 +887,9 @@ func parsingHomePageData(w http.ResponseWriter, r *http.Request, db *sql.DB) (da
 		ModerationRequests: moderationRequests,
 		ReportedRequests:   count,
 		UsernameId:         usernameId,
-		Userlist: 			userlist,	
+		Userlist:           userlist,
 	}
-	return 
+	return
 }
 func homePageHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 
@@ -914,7 +903,6 @@ func homePageHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	if err != nil {
 		fmt.Println("[ERROR]", err)
 	}
-	
 
 	userSession, err := helpers.ValidateSessionFromCookie(w, r)
 	var username string
@@ -928,7 +916,7 @@ func homePageHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 			fmt.Println("Failed to get role")
 		}
 		moderationRequests, _ = helpers.SQLSelectModeratorRequest(db, false)
-		count, err = helpers.CountSQL(db, "reportedRequests", "")
+		count, _ = helpers.CountSQL(db, "reportedRequests", "")
 	} else {
 		fmt.Println("This is usersession in homepagehandler \n", userSession)
 		fmt.Println("This is error", err)
@@ -953,7 +941,7 @@ func homePageHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		ModerationRequests: moderationRequests,
 		ReportedRequests:   count,
 		UsernameId:         usernameId,
-		Userlist: 			userlist,	
+		Userlist:           userlist,
 	}
 
 	if err != nil {
@@ -1009,10 +997,10 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 		PasswordRaw         string `json:"password"`
 		Email               string `json:"email"`
 		AppliesForModerator string `json:"checkbox"`
-		FirstName  string `json:"firstname"`
-        LastName   string `json:"lastname"`
-        Age        string    `json:"age"`
-        Gender     string `json:"gender"`
+		FirstName           string `json:"firstname"`
+		LastName            string `json:"lastname"`
+		Age                 string `json:"age"`
+		Gender              string `json:"gender"`
 	}
 
 	err = json.NewDecoder(r.Body).Decode(&requestData)
@@ -1028,9 +1016,9 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 	appliesForModerator2 := requestData.AppliesForModerator
 	password2 := requestData.PasswordRaw
 	firstname := requestData.FirstName
-    lastname := requestData.LastName
-    ageString := requestData.Age
-    gender := requestData.Gender
+	lastname := requestData.LastName
+	ageString := requestData.Age
+	gender := requestData.Gender
 
 	cryptedPassword, err := helpers.PasswordCrypter(password2)
 	if err != nil {
@@ -1044,8 +1032,8 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		apply = 0
 	}
-	
-	age, err := strconv.Atoi(ageString) 
+
+	age, err := strconv.Atoi(ageString)
 	if err != nil {
 		fmt.Println("StrConv failed: ", err)
 	}
@@ -1109,7 +1097,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		fmt.Println("Login handler got called with correct password")
 	} else {
 		fmt.Println("Login handler got called with wrong password")
-		
+
 		http.Redirect(w, r, "/registration.html?error=Invalid username or password!", http.StatusSeeOther)
 	}
 }
@@ -1316,17 +1304,17 @@ func showMyPostsHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		return
 	}
 	type PostData struct {
-		Categories  string `json:"myposts"`
+		Categories string `json:"myposts"`
 	}
 	var postData PostData
 
-		err := json.NewDecoder(r.Body).Decode(&postData)
-		if err != nil {
-			fmt.Println("[CREATEPOST]", err)
-			http.Error(w, "Bad request", http.StatusBadRequest)
-			return
-		}
-		defer r.Body.Close()
+	err := json.NewDecoder(r.Body).Decode(&postData)
+	if err != nil {
+		fmt.Println("[CREATEPOST]", err)
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
 
 	fmt.Println("PostData", postData)
 	fmt.Println("content:", postData.Categories)
@@ -1341,11 +1329,11 @@ func showMyPostsHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 
 	rawData := parsingHomePageData(w, r, db)
 	data := HomePageData{
-		 Username:           rawData.Username,
-		 Usernames:          rawData.Usernames,
-		 Posts:              posts,
-		 UsernameId:         rawData.UsernameId,
-		 Userlist: 			rawData.Userlist,	
+		Username:   rawData.Username,
+		Usernames:  rawData.Usernames,
+		Posts:      posts,
+		UsernameId: rawData.UsernameId,
+		Userlist:   rawData.Userlist,
 	}
 
 	if err != nil {
