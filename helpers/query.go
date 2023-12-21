@@ -13,7 +13,7 @@ type PrivateMessage struct {
 	Sender    string `json:"sender"`
 	Receiver  string `json:"receiver"`
 	Content   string `json:"content"`
-	Status 	  string `json:"status"`
+	Status    string `json:"status"`
 	Timestamp string `json:"timestamp"`
 }
 
@@ -22,11 +22,11 @@ type Userlist struct {
 	Username string `json:"username"`
 }
 
-func GetUsernamesIds(db *sql.DB,  senderIdInt int) ([]Userlist, error) {
-    // Define the SQL query for fetching all usernames and IDs
-	senderId := strconv.Itoa(senderIdInt) 
+func GetUsernamesIds(db *sql.DB, senderIdInt int) ([]Userlist, error) {
+	// Define the SQL query for fetching all usernames and IDs
+	senderId := strconv.Itoa(senderIdInt)
 
-    query := 	`SELECT 
+	query := `SELECT 
 	u.id,
     u.username
 FROM 
@@ -41,43 +41,41 @@ ORDER BY
     LOWER(u.username) ASC; 
 `
 
-    // Execute the query
-    rows, err := db.Query(query,senderId, senderId)
-    if err != nil {
-        return nil, fmt.Errorf("failed to execute query: %v", err)
-    }
-    defer rows.Close()
+	// Execute the query
+	rows, err := db.Query(query, senderId, senderId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute query: %v", err)
+	}
+	defer rows.Close()
 
-    // Slice to hold the user data
-    var users []Userlist
+	// Slice to hold the user data
+	var users []Userlist
 
-    // Iterate over the rows
-    for rows.Next() {
-        var user Userlist
-        if err := rows.Scan(&user.ID, &user.Username); err != nil {
-            return nil, fmt.Errorf("failed to scan row: %v", err)
-        }
-        users = append(users, user)
-    }
+	// Iterate over the rows
+	for rows.Next() {
+		var user Userlist
+		if err := rows.Scan(&user.ID, &user.Username); err != nil {
+			return nil, fmt.Errorf("failed to scan row: %v", err)
+		}
+		users = append(users, user)
+	}
 
-    // Check for errors after iterating
-    if err := rows.Err(); err != nil {
-        return nil, fmt.Errorf("failed after iterating rows: %v", err)
-    }
+	// Check for errors after iterating
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed after iterating rows: %v", err)
+	}
 
-    // Return the slice of users
-    return users, nil
+	// Return the slice of users
+	return users, nil
 }
-
-
 
 func GetPrivateMessages(db *sql.DB, senderUsername string, readerUsername string, limit int, offset int) (privateMessages []PrivateMessage, err error) {
 	var rows *sql.Rows
 
 	if limit == 0 {
-		limit = 10 
+		limit = 10
 	}
-	senderUserID,err  := GetUserID(senderUsername)
+	senderUserID, err := GetUserID(senderUsername)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -86,38 +84,38 @@ func GetPrivateMessages(db *sql.DB, senderUsername string, readerUsername string
 		fmt.Println(err)
 	}
 	rows, err = db.Query(`SELECT sender_id, receiver_id, content, created_at FROM private_messages WHERE (sender_id = ? AND receiver_id = ?)OR (sender_id = ? AND receiver_id = ?) ORDER BY created_at DESC LIMIT ? OFFSET ?;`, senderUserID, readerUserID, readerUserID, senderUserID, limit, offset)
-		if err != nil {
-			fmt.Println(err)
-			return nil , fmt.Errorf("Failed to execute query: %v", err)
-		}
-		if rows != nil {
-			defer rows.Close()
-	
-			var privateMessages []PrivateMessage
-			for rows.Next() {
-				var msg PrivateMessage
-				if err := rows.Scan(&msg.Sender, &msg.Receiver, &msg.Content, &msg.Timestamp); err != nil {
-					fmt.Println(err)
-				}
-				privateMessages = append(privateMessages, msg)
-			}
-	
-			if err := rows.Err(); err != nil {
-				fmt.Println(err)
-				return nil , fmt.Errorf("Failed after iterating rows: %v", err)
-			}
+	if err != nil {
+		fmt.Println(err)
+		return nil, fmt.Errorf("failed to execute query: %v", err)
+	}
+	if rows != nil {
+		defer rows.Close()
 
-			return privateMessages, nil
-		}	
-	return privateMessages, nil 
+		var privateMessages []PrivateMessage
+		for rows.Next() {
+			var msg PrivateMessage
+			if err := rows.Scan(&msg.Sender, &msg.Receiver, &msg.Content, &msg.Timestamp); err != nil {
+				fmt.Println(err)
+			}
+			privateMessages = append(privateMessages, msg)
+		}
+
+		if err := rows.Err(); err != nil {
+			fmt.Println(err)
+			return nil, fmt.Errorf("failed after iterating rows: %v", err)
+		}
+
+		return privateMessages, nil
+	}
+	return privateMessages, nil
 }
 
 func GetUsernames(db *sql.DB, senderIdInt int) (usernames []string, err error) {
 	var rows *sql.Rows
-	senderId := strconv.Itoa(senderIdInt) 
+	senderId := strconv.Itoa(senderIdInt)
 
 	queryForActiveUser :=
-	`SELECT 
+		`SELECT 
     u.username
 FROM 
     users u
@@ -132,51 +130,51 @@ ORDER BY
 `
 
 	rows, err = db.Query(queryForActiveUser, senderId, senderId)
-		if err != nil {
-			return nil , fmt.Errorf("Failed to execute query: %v", err)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute query: %v", err)
+	}
+	if rows != nil {
+		defer rows.Close()
+
+		var usernames []string
+		for rows.Next() {
+			var username string
+			if err := rows.Scan(&username); err != nil {
+				return nil, fmt.Errorf("failed to scan row: %v", err)
+			}
+			usernames = append(usernames, username)
 		}
-		if rows != nil {
-			defer rows.Close()
-	
-			var usernames []string
-			for rows.Next() {
-				var username string
-				if err := rows.Scan(&username); err != nil {
-					return nil , fmt.Errorf("Failed to scan row: %v", err)
-				}
-				usernames = append(usernames, username)
-			}
-	
-			if err := rows.Err(); err != nil {
-				return nil , fmt.Errorf("Failed after iterating rows: %v", err)
-			}
-	
-			return usernames, nil
-		}		
-	return 
+
+		if err := rows.Err(); err != nil {
+			return nil, fmt.Errorf("failed after iterating rows: %v", err)
+		}
+
+		return usernames, nil
+	}
+	return
 }
 
 func SQLAuthorize(w http.ResponseWriter, r *http.Request, db *sql.DB, username string, email string) {
 
 	count, _ := CountSQL(db, "usernameCheck", username)
 	if count == 0 {
-		InsertUser(db, username, "", email,"user",0, "", "", "", 0)
-		CreateSession(w, r, username) 
+		InsertUser(db, username, "", email, "user", 0, "", "", "", 0)
+		CreateSession(w, r, username)
 		http.Redirect(w, r, "/homepage.html", http.StatusTemporaryRedirect)
 	} else if count == 1 {
-		CreateSession(w, r, username) 
+		CreateSession(w, r, username)
 		http.Redirect(w, r, "/homepage.html", http.StatusTemporaryRedirect)
 	} else {
 		http.Redirect(w, r, "/login", http.StatusTemporaryRedirect)
 
 	}
-	
+
 }
 
 func CountSQL(db *sql.DB, status string, username string) (count int, err error) {
 
 	switch status {
-		
+
 	case "reportedRequests":
 		err = db.QueryRow("SELECT COUNT (*) FROM posts WHERE flagged = 1;").Scan(&count)
 		if err != nil {
@@ -189,7 +187,7 @@ func CountSQL(db *sql.DB, status string, username string) (count int, err error)
 		}
 	default:
 		fmt.Println("Mu isamaa, mu õnn ja rõõm")
-	} 
+	}
 
 	return count, nil
 }
@@ -214,14 +212,14 @@ func SQLinsertVote(postID, userID int, voteType string, comment bool) error {
 	db, err := GetDbConnection()
 	defer db.Close()
 
-	if comment != true {
-		_, err = db.Exec(`INSERT INTO post_votes(post_id, user_id, vote_type) VALUES(?, ?, ?) ON CONFLICT(post_id, user_id) DO UPDATE SET vote_type = ?`, postID, userID, voteType, voteType)
+	if comment {
+		_, err = db.Exec(`INSERT INTO comment_votes(comment_id, user_id, vote_type) VALUES(?, ?, ?) ON CONFLICT(comment_id, user_id) DO UPDATE SET vote_type = ?`, postID, userID, voteType, voteType)
 		if err != nil {
 			return err
 		}
 
-		} else {
-		_, err = db.Exec(`INSERT INTO comment_votes(comment_id, user_id, vote_type) VALUES(?, ?, ?) ON CONFLICT(comment_id, user_id) DO UPDATE SET vote_type = ?`, postID, userID, voteType, voteType)
+	} else {
+		_, err = db.Exec(`INSERT INTO post_votes(post_id, user_id, vote_type) VALUES(?, ?, ?) ON CONFLICT(post_id, user_id) DO UPDATE SET vote_type = ?`, postID, userID, voteType, voteType)
 		if err != nil {
 			return err
 		}
@@ -321,14 +319,14 @@ func SQLAnswerModerationRequest(db *sql.DB, username string, status string) erro
 
 		_, err := db.Exec("UPDATE users SET role = 'moderator' WHERE users.username = ?;", username)
 		if err != nil {
-			return fmt.Errorf("Error because: %v", err)
+			return fmt.Errorf("error because: %v", err)
 		}
 
 	case "RemoveModeration":
 
 		_, err := db.Exec("UPDATE users SET role = 'user' WHERE users.username = ?;", username)
 		if err != nil {
-			return fmt.Errorf("Error because: %v", err)
+			return fmt.Errorf("error because: %v", err)
 		}
 
 	default:
@@ -337,7 +335,7 @@ func SQLAnswerModerationRequest(db *sql.DB, username string, status string) erro
 
 	_, err := db.Exec("UPDATE users SET appliesformoderator = 0 WHERE users.username = ?;", username)
 	if err != nil {
-		return fmt.Errorf("Error because: %v", err)
+		return fmt.Errorf("error because: %v", err)
 	}
 
 	return nil
@@ -357,12 +355,12 @@ func SQLReportAndDeletePosts(db *sql.DB, postID int, status string) error {
 	if status == "report" {
 		_, err := db.Exec("UPDATE posts SET flagged = 1 WHERE posts.id = ?;", postID)
 		if err != nil {
-			return fmt.Errorf("Failed to flag post: %v", err)
+			return fmt.Errorf("failed to flag post: %v", err)
 		}
 	} else if status == "delete" {
 		_, err := db.Exec("DELETE FROM posts WHERE posts.id = ?;", postID)
 		if err != nil {
-			return fmt.Errorf("Failed to flag post: %v", err)
+			return fmt.Errorf("failed to flag post: %v", err)
 		}
 	}
 
@@ -422,17 +420,17 @@ func SQLDeletePost(db *sql.DB, postID int, status string) error {
 	if status == "delete" {
 		stmt, err = db.Prepare("DELETE FROM posts WHERE posts.id = ?;")
 		if err != nil {
-			return fmt.Errorf("Error to delete post: %v", err)
+			return fmt.Errorf("error to delete post: %v", err)
 		}
 	} else if status == "report" {
 		stmt, err = db.Prepare("UPDATE posts SET flagged = 1 WHERE posts.id = ?;")
 		if err != nil {
-			return fmt.Errorf("Error to delete post: %v", err)
+			return fmt.Errorf("error to delete post: %v", err)
 		}
 	}
 
 	if err != nil {
-		return fmt.Errorf("Unable to prepare statement: %v", err)
+		return fmt.Errorf("unable to prepare statement: %v", err)
 	}
 	defer stmt.Close()
 
@@ -451,7 +449,7 @@ func SQLDeletePost(db *sql.DB, postID int, status string) error {
 }
 
 func SQLSelectUserID(db *sql.DB, username string) (userID int) {
-	row := db.QueryRow("SELECT id FROM users WHERE username = ?;", username) 
+	row := db.QueryRow("SELECT id FROM users WHERE username = ?;", username)
 
 	err := row.Scan(&userID)
 	if err == sql.ErrNoRows {
@@ -468,7 +466,7 @@ func SQLGetUserRole(db *sql.DB, username string) (role string, err error) {
 	err = db.QueryRow("SELECT role FROM users WHERE username = ?;", username).Scan(&role)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return "None", fmt.Errorf("Role not found")
+			return "None", fmt.Errorf("role not found")
 		}
 		return "None", fmt.Errorf("failed to get user role: %w", err)
 	}
@@ -476,18 +474,17 @@ func SQLGetUserRole(db *sql.DB, username string) (role string, err error) {
 	return role, nil
 }
 
-
 func SQLSelectModeratorRequest(db *sql.DB, status bool) (usernames []string, err error) {
 	var rows *sql.Rows
 	var username string
-	if status == false {
-		rows, err = db.Query("SELECT username FROM users WHERE appliesformoderator = 1;")
-	} else if status == true {
+	if status {
 		rows, err = db.Query("SELECT username FROM users WHERE role = 'moderator';")
+	} else {
+		rows, err = db.Query("SELECT username FROM users WHERE appliesformoderator = 1;")
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("Failed to query database: %v", err)
+		return nil, fmt.Errorf("failed to query database: %v", err)
 	}
 	defer func() {
 		if closeErr := rows.Close(); closeErr != nil {
