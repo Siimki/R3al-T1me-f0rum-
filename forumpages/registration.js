@@ -1,7 +1,3 @@
-// window.onload = function () {
-//     loadRegistrationForm();
-// }
-
 import { RegistrationComplete } from "./registered.js";
 
 var data = null;
@@ -90,7 +86,6 @@ export async function loadRegistrationForm() {
     });
     var json = JSON.stringify(object);
 
-
     // send AJAX request
     try {
       const response = await fetch("/register", {
@@ -133,7 +128,6 @@ export async function loginHandler() {
   let username = document.getElementById("login-username").value;
   let password = document.getElementById("login-password").value;
   try {
-
     const response = await fetch("/login", {
       method: "POST",
       headers: {
