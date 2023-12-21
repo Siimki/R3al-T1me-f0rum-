@@ -21,7 +21,6 @@ export async function mainPage(data) {
   console.log("This is ducked");
   const appDiv = document.getElementById("app");
   appDiv.className = "";
-  // Clear the content of appDiv
   appDiv.innerHTML = "";
 
   // Create the Welcome header
