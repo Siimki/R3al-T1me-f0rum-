@@ -114,7 +114,6 @@ export async function mainPage(data) {
   const logoutForm = document.createElement("form");
   logoutForm.action = "/logout";
   logoutForm.method = "post";
-  
 
   const logoutBtn = document.createElement("input");
   logoutBtn.className =
@@ -125,69 +124,33 @@ export async function mainPage(data) {
   logoutBtn.value = "Log out";
   async function logoutter() {
     try {
-        const response = await fetch('/logout', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
+      const response = await fetch("/logout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
 
-        });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json(); // or response.text() if the response is not in JSON format
-        console.log('Logout successful:', data);
-
+      const data = await response.json(); // or response.text() if the response is not in JSON format
+      console.log("Logout successful:", data);
     } catch (error) {
-        console.error('Logout failed:', error);
+      console.error("Logout failed:", error);
     }
-}
-  logoutBtn.addEventListener("click", function (event){
-    logoutter()
-    logout()
-  })
+  }
+  logoutBtn.addEventListener("click", function (event) {
+    logoutter();
+    logout();
+  });
 
   logoutForm.appendChild(logoutBtn);
   buttonDiv.appendChild(logoutForm);
 
   appDiv.appendChild(buttonDiv);
 
-  // Add the rest of the buttons and elements in a similar manner
-
-  // Hint: Make this section active to enable moderation 
-
-  // if (data.Role === "admin") {
-  //   const moderationLink = document.createElement("a");
-  //   moderationLink.href = "/admin";
-  //   moderationLink.className =
-  //     "bg-blue-300 hover:bg-blue-400 border rounded p-2 m-1 transition duration-500 inline-block text-center";
-  //   moderationLink.textContent = "Moderation";
-  //   buttonDiv.appendChild(moderationLink);
-
-  //   if (data.ModerationRequests && data.ModerationRequests.length > 0) {
-  //     const notificationSpan = document.createElement("span");
-  //     notificationSpan.className =
-  //       "inline-block bg-red-500 text-white text-xs px-1 pt-1 pb-0.5 rounded-full uppercase font-semibold tracking-wide";
-  //     notificationSpan.textContent = data.ModerationRequests.length.toString();
-  //     moderationLink.appendChild(notificationSpan);
-  //   }
-  // } else if (data.Role === "moderator") {
-  //   const smallModeratorLink = document.createElement("a");
-  //   smallModeratorLink.href = "/report";
-  //   smallModeratorLink.className =
-  //     "bg-blue-300 hover:bg-blue-400 border rounded p-2 m-1 transition duration-500 inline-block text-center";
-  //   smallModeratorLink.textContent = "Reported posts";
-  //   buttonDiv.appendChild(smallModeratorLink);
-  //   if (data.ReportedRequests > 0) {
-  //     const notificationSpan = document.createElement("span");
-  //     notificationSpan.className =
-  //       "inline-block bg-red-500 text-white text-xs px-1 pt-1 pb-0.5 rounded-full uppercase font-semibold tracking-wide";
-  //     notificationSpan.textContent = data.ModerationRequests.length.toString();
-  //     moderationLink.appendChild(notificationSpan);
-  //   }
-  // }
   // Create the filtered posts form
   const filteredPostsForm = document.createElement("form");
   filteredPostsForm.addEventListener("submit", function (event) {
@@ -204,7 +167,6 @@ export async function mainPage(data) {
     // Call a function to handle fetching the filtered data
     fetchFilteredPosts(selectedGames);
   });
-
 
   // Create the container div for the checkboxes and button
   const filterContainerDiv = document.createElement("div");
@@ -618,8 +580,8 @@ export async function mainPage(data) {
     var senderusername = data.Username;
     var receiverusername = currentChatUsername;
     console.log("The message we send to the server:", message);
-    console.log("Sender and Receiver below")
-    console.log("Sender and Receiver", senderusername, receiverusername)
+    console.log("Sender and Receiver below");
+    console.log("Sender and Receiver", senderusername, receiverusername);
 
     // Here we send the message through the WebSocket instead of using fetch
     if (socket.readyState === WebSocket.OPEN) {
@@ -830,7 +792,6 @@ export async function mainPage(data) {
     };
   }
 
-
   const messagesContainer = document.getElementById("messages");
   messagesContainer.addEventListener(
     "scroll",
@@ -840,7 +801,7 @@ export async function mainPage(data) {
         await loadMoreMessages();
       }
     }, 500)
-  ); 
+  );
   // Update the rest of your functions and event listeners as needed
 
   function formatDate(timestamp) {
