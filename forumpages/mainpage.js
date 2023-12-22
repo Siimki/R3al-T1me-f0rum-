@@ -170,7 +170,7 @@ export async function mainPage(data) {
 
   // Create the container div for the checkboxes and button
   const filterContainerDiv = document.createElement("div");
-  filterContainerDiv.className = "flex justify-center bg-pink-300";
+  filterContainerDiv.className = "flex justify-center bg-gray-300";
 
   // Create and append checkboxes with labels
   const games = [
