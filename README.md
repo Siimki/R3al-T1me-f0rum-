@@ -24,7 +24,6 @@ Go to the project directory
 ### Instructions
 
 - run `go run server.go` and go to `http://localhost:8080/` to start auditing
-- ||
 - run `sh build_and_run.sh` and run the image in docker
 
 ### Audit questions for forum:
