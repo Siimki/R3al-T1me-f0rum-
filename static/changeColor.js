@@ -1,5 +1,4 @@
 export function changeColor(checkboxElem, divId) {
-    console.log("Do i come to the changeColor.js?")
 
     var checkboxDiv = document.getElementById(divId);
     if (checkboxElem.checked) {

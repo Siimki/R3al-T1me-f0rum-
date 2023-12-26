@@ -1073,10 +1073,12 @@ video {
 .chat-footer {
   padding: 5px;
   display: flex;
+
 }
 .chat-footer input {
   flex-grow: 1;
   padding: 10px;
+  width: 200px;
   border: none;
   border-radius: 5px;
   margin-right: 10px;
@@ -1088,6 +1090,7 @@ video {
   border: none;
   border-radius: 5px;
   cursor: pointer;
+  display: flex;
 }
 
 .chatbox-toggle {

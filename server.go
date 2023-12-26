@@ -128,15 +128,18 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	// fmt.Println("this is username, limit and offset from URL", username, limit, offset)
 	// clients[username] = ws
 	clients[username] = Client{username, ws}
+	
+	offsetLimit, err := convertQueryParams(offset)
+	if err != nil {
+		log.Printf("Conversion failed for limit: %v", err)
+		return
+	}
+	strLimit, err := convertQueryParams(limit)
+	if err != nil {
+		log.Printf("Conversion failed for offset: %v", err)
+		return
+	}
 
-	strLimit, err := strconv.Atoi(limit)
-	if err != nil {
-		fmt.Println("str conversion fucked ")
-	}
-	offsetLimit, err := strconv.Atoi(offset)
-	if err != nil {
-		fmt.Println("Str conversion fucked v2")
-	}
 
 	// Notify all users about the updated status
 	notifyUserStatus(username, true)
@@ -176,10 +179,6 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 				return
 			}
 
-			if len(privateMessages) == 0 {
-				fmt.Println("No messages found")
-			}
-
 			response := WebSocketResponse{
 				Type:     "message",
 				Messages: privateMessages,
@@ -196,10 +195,6 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
-			}
-
-			if len(privateMessages) == 0 {
-				fmt.Println("No messages found")
 			}
 
 			response := WebSocketResponse{
@@ -310,7 +305,6 @@ func getMessageHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 
 	// Handle case when no messages are found
 	if len(privateMessages) == 0 {
-		fmt.Println("No messages found")
 		w.Write([]byte("[]")) // Send empty JSON array
 		return
 	}
@@ -1093,10 +1087,10 @@ func loginHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	match, _ := helpers.PasswordCheck(password, hashedPassword)
 	if match {
 		helpers.CreateSession(w, r, usernameOrEmail)
-		http.Redirect(w, r, "/homepage", http.StatusSeeOther) // Assuming "/home" is the route for the homePageHandler
-		fmt.Println("Login handler got called with correct password")
+		http.Redirect(w, r, "/homepage", http.StatusSeeOther) 
+		fmt.Println("Correct password")
 	} else {
-		fmt.Println("Login handler got called with wrong password")
+		fmt.Println("Wrong password")
 
 		http.Redirect(w, r, "/registration.html?error=Invalid username or password!", http.StatusSeeOther)
 	}
@@ -1486,4 +1480,11 @@ func reportPostHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	if err != nil {
 		http.Error(w, "Failed to execute template: "+err.Error(), http.StatusInternalServerError)
 	}
+}
+
+func convertQueryParams(param string) (int, error) {
+	if param == "" {
+		return 0, nil
+	}
+	return strconv.Atoi(param)
 }

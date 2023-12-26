@@ -1,5 +1,4 @@
 export function displayComments() {
-  // Your code for setting up comment toggling
   document.addEventListener("click", function (event) {
     // Check if the clicked element has the .comments-toggler class
     if (event.target.classList.contains("comments-toggler")) {

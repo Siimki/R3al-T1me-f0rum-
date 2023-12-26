@@ -18,7 +18,6 @@ export async function mainPage(data) {
 
   const body = document.getElementById("body");
   body.className = "bg-gray-100";
-  console.log("This is ducked");
   const appDiv = document.getElementById("app");
   appDiv.className = "";
   appDiv.innerHTML = "";
@@ -69,7 +68,7 @@ export async function mainPage(data) {
 
   myPostsBtn.addEventListener("click", function (event) {
     event.preventDefault(); // Prevent the form from submitting traditionally
-    fetchMyPosts("myposts"); // Fetch "My Posts"
+    fetchMyPosts("myposts"); 
   });
 
   myPostsForm.appendChild(myPostsBtn);
@@ -89,8 +88,8 @@ export async function mainPage(data) {
   myLikedPostsBtn.textContent = "My liked posts";
 
   myLikedPostsBtn.addEventListener("click", function (event) {
-    event.preventDefault(); // Prevent the form from submitting traditionally
-    fetchMyPosts("mylikedposts"); // Fetch "My Liked Posts"
+    event.preventDefault(); 
+    fetchMyPosts("mylikedposts");
   });
 
   myLikedPostsForm.appendChild(myLikedPostsBtn);
@@ -154,7 +153,7 @@ export async function mainPage(data) {
   // Create the filtered posts form
   const filteredPostsForm = document.createElement("form");
   filteredPostsForm.addEventListener("submit", function (event) {
-    event.preventDefault(); // Prevent the form from submitting in the traditional way
+    event.preventDefault(); 
 
     let selectedGames = [];
     games.forEach((game) => {
@@ -220,7 +219,6 @@ export async function mainPage(data) {
 
   appDiv.appendChild(filteredPostsForm);
 
-  console.log("do i arrive to the data.posts?");
   // Posts loop
   data.Posts.forEach((post) => {
     const postDiv = document.createElement("div");
@@ -255,7 +253,7 @@ export async function mainPage(data) {
     likeButton.className =
       "likeButton mr-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-2 rounded m-3";
     likeButton.dataset.postId = post.ID;
-    likeButton.dataset.userId = post.Username; // Assuming you have the username in post.Username
+    likeButton.dataset.userId = post.Username; 
     likeButton.innerHTML = `👍 Like <span id="likeCount${post.ID}">${post.Likes}</span>`;
     flexBox.appendChild(likeButton);
 
@@ -264,7 +262,7 @@ export async function mainPage(data) {
     dislikeButton.className =
       "dislikeButton mr-2 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-2 rounded m-3";
     dislikeButton.dataset.postId = post.ID;
-    dislikeButton.dataset.userId = post.Username; // Assuming you have the username in post.Username
+    dislikeButton.dataset.userId = post.Username; 
     dislikeButton.innerHTML = `👎 Dislike <span id="dislikeCount${post.ID}">${post.Dislikes}</span>`;
     flexBox.appendChild(dislikeButton);
 
@@ -296,10 +294,8 @@ export async function mainPage(data) {
     const commentSectionText = document.createElement("p");
     commentSectionText.textContent = "Comment section 💬";
     //range comments
-    console.log(post.Comments);
     if (post.Comments) {
       post.Comments.forEach((comment) => {
-        console.log(comment);
         const commentDiv = document.createElement("div");
         commentDiv.className = "comment border rounded my-1 ml-24";
         const commentInnerDiv = document.createElement("div");
@@ -342,18 +338,14 @@ export async function mainPage(data) {
         commentInnerDiv.appendChild(commentFlexBox);
         commentDiv.appendChild(commentInnerDiv);
         commentsSection.appendChild(commentDiv);
-        //   innerPostDiv.appendChild(commentDiv)
       });
     }
     innerPostDiv.appendChild(commentsSection);
 
     // i am not entirely sure where i put this line
-    // innerPostDiv.appendChild(commentDiv)
     const addCommentForm = document.createElement("form");
     addCommentForm.method = "get";
     addCommentForm.action = "#addcomment";
-    // const randomDiv = document.createElement('div')
-    // randomDiv.className = 'flex justify-between'
     const inputAddComment = document.createElement("input");
     inputAddComment.type = "hidden";
     inputAddComment.name = "id";
@@ -385,16 +377,11 @@ export async function mainPage(data) {
     innerPostDiv.appendChild(addCommentForm);
 
     // Populate postDiv with post data
-    // ... similar logic as above, create elements and append them ...
-    // Append the innerPostDiv to the postDiv
-    postDiv.appendChild(innerPostDiv);
 
-    // Append the postDiv to the appDiv
+    postDiv.appendChild(innerPostDiv);
 
     appDiv.appendChild(postDiv);
   });
-
-  function checkIfOnline() {}
 
   function updateUserStatus(username, isOnline, userId) {
     const userItem = document.querySelector(
@@ -448,8 +435,6 @@ export async function mainPage(data) {
       userListContainer.appendChild(userItem);
     });
 
-    console.log("usernameID", data.Userlist[0]);
-    console.log("usernameID", data.UsernameId);
   }
 
   function updateUserList(userlist) {
@@ -460,13 +445,13 @@ export async function mainPage(data) {
       const userItem = document.createElement("div");
       userItem.classList.add("user-list-item", "chatboxToggle");
       userItem.textContent = user.username;
-      userItem.dataset.userId = user.id; // Store the user ID using data attributes
+      userItem.dataset.userId = user.id; 
       //I try to outComment this line
       // currentChatUsername = user;
       // chatBox.classList.add('expanded');
 
       // Set up the click event for initiating chat
-      userItem.onclick = () => initiateChat(user.username, user.id); // Pass both username and ID
+      userItem.onclick = () => initiateChat(user.username, user.id); 
 
       userListContainer.appendChild(userItem);
     });
@@ -494,11 +479,11 @@ export async function mainPage(data) {
     getMessagesFromServer(1);
     currentPage = 1;
     allMessagesLoaded = false;
-    const chatHeaderUsername = document.getElementById("chat-header-username"); // Make sure you have this element in your HTML
+    const chatHeaderUsername = document.getElementById("chat-header-username"); 
     chatHeaderUsername.textContent = `Chat with ${nickname}`;
   }
   const toggleUserListBtn = document.getElementById("toggleUserListBtn");
-  const userList = document.getElementById("userList"); // Assuming this is the ID of your user list sidebar
+  const userList = document.getElementById("userList"); 
 
   // Event listener for the toggle button
   toggleUserListBtn.addEventListener("click", () => {
@@ -513,7 +498,7 @@ export async function mainPage(data) {
   });
 
   const chatboxToggle = document.querySelectorAll(".chatboxToggle");
-  const chatboxClose = document.querySelector(".chat-header .close"); // Make sure the selector is specific to the close button
+  const chatboxClose = document.querySelector(".chat-header .close"); 
 
   // Establish a WebSocket connection when the user navigates to the chat
   let socket = null;
@@ -525,19 +510,19 @@ export async function mainPage(data) {
     };
 
     socket.onmessage = function (event) {
-      console.log(`[message] Data received from server: ${event.data}`);
+      // console.log(`[message] Data received from server: ${event.data}`);
       try {
         const data = JSON.parse(event.data);
 
         if (data.type === "message") {
           // Handle message data
           //try to reverse here
-          displayMessages(data.messages.reverse()); // Assuming data.Messages contains an array of message objects
+          displayMessages(data.messages.reverse()); 
         } else if (data.type === "userlist") {
           // Handle user list data
-          updateUserList(data.userlist); // Assuming data.Userlist contains the updated user list
+          updateUserList(data.userlist);
         } else if (data.type == "status") {
-          console.log("[UPDATE]: Updating userlist status ");
+          // console.log("[UPDATE]: Updating userlist status ");
           updateUserStatus(data.username, data.online, data.userid);
         }
       } catch (e) {
@@ -566,10 +551,7 @@ export async function mainPage(data) {
   document.getElementById("sendMessage").addEventListener("click", () => {
     const messageInput = document.getElementById("messageInput");
     const message = messageInput.value.trim();
-    console.log(
-      "This is message that is going to be sent to the server",
-      message
-    );
+
     if (message) {
       sendMessageToServer(message);
       messageInput.value = ""; // Clear the input after sending
@@ -579,9 +561,6 @@ export async function mainPage(data) {
   function sendMessageToServer(message) {
     var senderusername = data.Username;
     var receiverusername = currentChatUsername;
-    console.log("The message we send to the server:", message);
-    console.log("Sender and Receiver below");
-    console.log("Sender and Receiver", senderusername, receiverusername);
 
     // Here we send the message through the WebSocket instead of using fetch
     if (socket.readyState === WebSocket.OPEN) {
@@ -605,7 +584,6 @@ export async function mainPage(data) {
 
     messages.forEach((message) => {
       const messageWrapper = document.createElement("div");
-      console.log(typeof message.sender, "And: ", typeof data.UsernameId);
 
       messageWrapper.classList.add(
         "message-wrapper",
@@ -665,13 +643,7 @@ export async function mainPage(data) {
         const messagesContainer = document.getElementById("messages");
         messagesContainer.innerHTML = "";
       }
-      console.log("Fetched messages count: ", privateMessages.length);
-      if (privateMessages.length < 10) {
-        //allMessagesLoaded = true;
-        console.log("Setting allMessagesLoaded to true");
-      } else {
-        console.log("There are more messages to load");
-      }
+
       // Display the fetched messages
       displayMessages(privateMessages.reverse(), true); // Pass 'true' to append messages
     } catch (error) {
@@ -682,13 +654,12 @@ export async function mainPage(data) {
     }
   }
 
-  let currentPage = 1; // Keep track of the current page of messages
-  let loadingMessages = false; // Flag to prevent multiple simultaneous loads
-  let allMessagesLoaded = false; // Flag to indicate when all messages are loaded
+  let currentPage = 1; 
+  let loadingMessages = false; 
+  let allMessagesLoaded = false; 
 
   // Function to load more messages when scrolled to the top
   async function loadMoreMessages() {
-    console.log("Calling LoadMoreMessage");
     if (loadingMessages || allMessagesLoaded) {
       console.log("Exit early: ", { loadingMessages, allMessagesLoaded });
       return;
@@ -719,11 +690,9 @@ export async function mainPage(data) {
       }
 
       const moreMessages = await response.json();
-      console.log("[LoadMoreMessages]Received messages: ", moreMessages);
 
       if (moreMessages && moreMessages.length < 10) {
         allMessagesLoaded = true;
-        console.log("No more messages to load");
       }
 
       prependMessages(moreMessages); // Add new messages to the top of the chat
@@ -797,7 +766,6 @@ export async function mainPage(data) {
     "scroll",
     throttle(async () => {
       if (messagesContainer.scrollTop === 0 && !allMessagesLoaded) {
-        console.log("Attempting to load more messages");
         await loadMoreMessages();
       }
     }, 500)

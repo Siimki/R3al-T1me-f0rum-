@@ -268,7 +268,7 @@ func GetUserID(username string) (int, error) {
 	err = db.QueryRow("SELECT id FROM users WHERE username = ?;", username).Scan(&id)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return 0, fmt.Errorf("user not found")
+			return 0, nil
 		}
 		return 0, fmt.Errorf("failed to get user ID: %w", err)
 	}

@@ -27,12 +27,7 @@ Go to the project directory
 - ||
 - run `sh build_and_run.sh` and run the image in docker
 
-### Admin credentials
-
-- Username for admin: Admin
-- Password for admin: Admin123
-
-### Audit questions for forum-moderation:
+### Audit questions for forum:
 
 https://github.com/01-edu/public/blob/master/subjects/real-time-forum/audit/README.md
 

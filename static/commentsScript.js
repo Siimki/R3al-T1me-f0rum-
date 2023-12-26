@@ -1,15 +1,12 @@
 export function commentsScript() {
-        console.log("Do i come to the commentsScript.js?")
         var posts = document.querySelectorAll('.comment');
         posts.forEach(function(post) {
             var commentlikeButton = post.querySelector('.commentlikeButton');
             var commentdislikeButton = post.querySelector('.commentdislikeButton');
-            var postID = parseInt(commentlikeButton.getAttribute('data-comment-id')); // assuming both buttons have same data-post-id
-            var userID = commentlikeButton.getAttribute('data-user-id'); // assuming both buttons have same data-user-id
+            var postID = parseInt(commentlikeButton.getAttribute('data-comment-id'));
+            var userID = commentlikeButton.getAttribute('data-user-id'); 
     
-            // Add event listener to the like button.
             commentlikeButton.addEventListener('click', function() {
-                // Send a request to the server indicating a "like" was clicked.
                 fetch('/commentlike', {
 
                     method: 'POST',
@@ -25,13 +22,11 @@ export function commentsScript() {
 
                 })
                 .then(handleResponse)
-                .then(updateLikesDislikes) // Add this line
+                .then(updateLikesDislikes) 
                 .catch(handleError);
             });
     
-            // Add event listener to the dislike button.
             commentdislikeButton.addEventListener('click', function() {
-                // Send a request to the server indicating a "dislike" was clicked.
                 fetch('/commentdislike', {
                     method: 'POST',
                     headers: {
@@ -43,7 +38,7 @@ export function commentsScript() {
                     }),
                 })
                 .then(handleResponse)
-                .then(updateLikesDislikes) // Add this line
+                .then(updateLikesDislikes)
                 .catch(handleError);
             });
     
