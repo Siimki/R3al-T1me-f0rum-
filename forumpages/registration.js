@@ -99,6 +99,7 @@ export async function loadRegistrationForm() {
       const data = await response.json();
 
       if (data.success) {
+        alert(data.message)
         loadPageFromHash("registered");
       } else {
         alert(data.message);
