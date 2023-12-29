@@ -1032,6 +1032,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("StrConv failed: ", err)
 	}
 	err = helpers.InitalizeDb(username2, string(cryptedPassword), email2, "user", apply, firstname, lastname, gender, age)
+	
 	if err != nil {
 
 		errMessage, _ := helpers.ErrorCheck(err)
@@ -1040,6 +1041,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(response)
 		return
+
 	} else {
 		fmt.Println(err, "is error")
 	}

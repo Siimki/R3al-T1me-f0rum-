@@ -98,10 +98,10 @@ export async function loadRegistrationForm() {
 
       const data = await response.json();
 
-      if (data.Success) {
-        loadPage("registered");
+      if (data.success) {
+        loadPageFromHash("registered");
       } else {
-        alert(data.Message);
+        alert(data.message);
         RegistrationComplete();
       }
     } catch (error) {

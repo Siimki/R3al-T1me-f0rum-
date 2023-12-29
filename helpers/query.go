@@ -193,6 +193,7 @@ func CountSQL(db *sql.DB, status string, username string) (count int, err error)
 }
 
 func InsertUser(db *sql.DB, username, password, email, role string, apply int, firstName string, lastName string, gender string, age int) error {
+	fmt.Println("InsertUser error")
 	stmt, err := db.Prepare("INSERT INTO users(username, password, email, role, appliesformoderator, last_name, first_name, age, gender) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
 	if err != nil {
 		return fmt.Errorf("failed to prepare user statement: %w", err)
