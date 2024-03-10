@@ -1,7 +1,7 @@
 # R3al-T1me-F0rum
 
-I chaned the name of the repository so fellow 01edu platform uses could not find and just copy it. 
-This project was mostly made by me. Previous project was forum which i did all solo. For this project i implemented real-time messaging function. Roman joined me to fix some bugs and helping to test all the features.
+I changed the name of the repository so fellow 01edu platform users could not find and just copy it. 
+This project was mostly made by me. The previous project was a forum which I did all solo. For this project, I implemented real-time messaging function. Roman joined me to fix some bugs and help to test all the features.
 
 ## With this project we learned about
 
