@@ -1,5 +1,7 @@
 # Real-Time-Forum
 
+This project was mostly made by me. Previous project was forum which i did all solo. For this project i implemented real-time messaging function. Roman joined me to fix some bugs and helping to test all the features.
+
 ## With this project we learned about
 
 - User sessions
